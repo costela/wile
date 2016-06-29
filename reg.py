@@ -7,7 +7,7 @@ from acme import messages
 from acme import client
 from acme import errors
 
-logger = logging.getLogger('wile').getChild(__name__)
+logger = logging.getLogger('wile').getChild('register')
 
 
 @click.command(help='Register a new account key or update an existing registration')
