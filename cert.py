@@ -73,7 +73,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
     basename = basename or domain_list[0]
 
     if not overwrite and os.path.exists(os.path.join(output_dir, '%s.key' % basename)):
-        click.confirm('file %s.key exists; overwrite?' % basename, abort=true)
+        click.confirm('file %s.key exists; overwrite?' % basename, abort=True)
 
     with open(os.path.join(output_dir, '%s.key' % basename), 'wb') as f:
         os.fchmod(f.fileno(), 0640)
@@ -85,7 +85,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         certs.extend(chain)
     else:
         if not overwrite and os.path.exists(os.path.join(output_dir, '%s.chain.crt' % basename)):
-            click.confirm('file %s.chain.crt exists; overwrite?' % basename, abort=true)
+            click.confirm('file %s.chain.crt exists; overwrite?' % basename, abort=True)
 
         with open(os.path.join(output_dir, '%s.chain.crt' % basename), 'wb') as f:
             for crt in chain:
