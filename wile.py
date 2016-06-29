@@ -3,6 +3,7 @@
 import os
 import logging
 
+from setuptools_scm import get_version
 import click
 from acme import client
 from acme import messages
@@ -19,7 +20,7 @@ logger = logging.getLogger('wile')
 
 @click.group(help='Simple client for ACME (letsencrypt) servers')
 @click.pass_obj
-@click.version_option()
+@click.version_option(version=get_version())
 @click.option('--staging', is_flag=True, default=False, help='use letsencrypt\'s staging server (for testing)')
 @click.option('--directory-url', metavar='URL', default='https://acme-v01.api.letsencrypt.org/directory', show_default=True, help='URL for alternative ACME directory (will be overriden by --staging)')
 @click.option('--account-key', 'account_key_path', type=click.Path(dir_okay=False, allow_dash=True), default='~/.wile/account.key', show_default=True, help='path to existing account key')

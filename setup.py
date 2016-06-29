@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import os
 from setuptools import setup
 
@@ -6,17 +7,18 @@ def read(filename):
 
 setup(
     name = "wile",
-    version = "0.1",
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     author = "Leo Antunes",
     author_email = "leo@costela.net",
     description = ("A stripped down Let's Encrypt (ACME) client"),
     license = "GPLv3",
     keywords = "letsencrypt acme ssl",
     url = "https://github.com/costela/wile",
-    py_modules = ['wile'],
+    py_modules = ['wile', 'reg', 'cert'],
     install_requires = [
-        'acme>=0.6',
-        'click=>6.0',
+        'acme >= 0.6',
+        'click >= 6.0',
         'pyOpenSSL',
         'cryptography',
     ],
