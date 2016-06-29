@@ -17,10 +17,14 @@ import reg
 
 logger = logging.getLogger('wile')
 
+try:
+    _version = get_version()
+except LookupError:
+    _version = None
 
 @click.group(help='Simple client for ACME (letsencrypt) servers')
 @click.pass_obj
-@click.version_option(version=get_version())
+@click.version_option(version=_version)
 @click.option('--staging', is_flag=True, default=False, help='use letsencrypt\'s staging server (for testing)')
 @click.option('--directory-url', metavar='URL', default='https://acme-v01.api.letsencrypt.org/directory', show_default=True, help='URL for alternative ACME directory (will be overriden by --staging)')
 @click.option('--account-key', 'account_key_path', type=click.Path(dir_okay=False, allow_dash=True), default='~/.wile/account.key', show_default=True, help='path to existing account key')
