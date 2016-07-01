@@ -64,8 +64,8 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         # import pdb; pdb.set_trace()
         crt, updated_authzrs = ctx.obj['acme'].poll_and_request_issuance(csr, authzrs)
     except errors.PollError as e:
-        if e.exausted:
-            logger.error('validation timed out for the following domains: %s' % ', '.join(authzr.body.identifier for authzr in e.exausted))
+        if e.exhausted:
+            logger.error('validation timed out for the following domains: %s' % ', '.join(authzr.body.identifier for authzr in e.exhausted))
         invalid_domains = [authzr.body.identifier for authzr in e.updated if authzr.body.status == messages.STATUS_INVALID]
         if invalid_domains:
             logger.error('validation invalid for the following domains: %s' % ', '.join(invalid_domains))
