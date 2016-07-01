@@ -21,3 +21,8 @@ Revoking a certificate:
 ```
 $ wile cert revoke /etc/ssl/private/example.com.crt
 ```
+
+Note that you can also pass multiple domains with a single document root, which creates a certificate with [Subject Alternative Names](https://en.wikipedia.org/wiki/Subject_Alternative_Name).
+```
+$ wile cert request example.com:/var/www/example.com/ www.example.com
+```
