@@ -3,7 +3,7 @@
 import os
 import logging
 
-from setuptools_scm import get_version
+import setuptools_scm
 import click
 from acme import client
 from acme import messages
@@ -17,9 +17,9 @@ import reg
 
 logger = logging.getLogger('wile')
 
-try:
-    _version = get_version()
-except LookupError:
+try:  # if we're in the checked out tree, use setuptools_scm
+    _version = setuptools_scm.get_version()
+except LookupError:  # otherwise click will attempt to find it via pkg_resources
     _version = None
 
 @click.group(help='Simple client for ACME (letsencrypt) servers')

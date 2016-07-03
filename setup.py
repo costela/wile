@@ -21,6 +21,7 @@ setup(
         'click >= 6.0',
         'pyOpenSSL',
         'cryptography',
+        'setuptools_scm', # for run-time version-detect
     ],
     entry_points={
         'console_scripts': [
