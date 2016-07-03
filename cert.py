@@ -37,6 +37,9 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
 
     domain_list, webroot_list = _generate_domain_and_webroot_lists_from_args(ctx, domainroots)
     basename = basename or domain_list[0]
+    keyfile_path = os.path.join(output_dir, '%s.key' % basename)
+    certfile_path = os.path.join(output_dir, '%s.crt' % basename)
+    chainfile_path = os.path.join(output_dir, '%s.chain.crt' % basename)
 
     for (domain, webroot) in zip(domain_list, webroot_list):
         logger.info('requesting challange for %s in %s' % (domain, webroot))
@@ -63,10 +66,10 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
                 logger.error('%s: %s' % invalid_domain)
         ctx.exit(1)
 
-    if not overwrite and os.path.exists(os.path.join(output_dir, '%s.key' % basename)):
-        click.confirm('file %s.key exists; overwrite?' % basename, abort=True)
+    if not overwrite and os.path.exists(keyfile_path):
+        _confirm_overwrite(keyfile_path)
 
-    with open(os.path.join(output_dir, '%s.key' % basename), 'wb') as f:
+    with open(keyfile_path, 'wb') as f:
         os.fchmod(f.fileno(), 0640)
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
@@ -75,17 +78,17 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
     if with_chain:
         certs.extend(chain)
     else:
-        if not overwrite and os.path.exists(os.path.join(output_dir, '%s.chain.crt' % basename)):
-            click.confirm('file %s.chain.crt exists; overwrite?' % basename, abort=True)
+        if not overwrite and os.path.exists(chainfile_path):
+            _confirm_overwrite(chainfile_path)
 
-        with open(os.path.join(output_dir, '%s.chain.crt' % basename), 'wb') as f:
+        with open(chainfile_path, 'wb') as f:
             for crt in chain:
                 f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
-    if not overwrite and os.path.exists(os.path.join(output_dir, '%s.crt' % basename)):
-        click.confirm('File %s.crt exists; overwrite?' % basename, abort=True)
+    if not overwrite and os.path.exists(certfile_path):
+        _confirm_overwrite(certfile_path)
 
-    with open(os.path.join(output_dir, '%s.crt' % basename), 'wb') as f:
+    with open(certfile_path, 'wb') as f:
         for crt in certs:
             f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
@@ -98,6 +101,10 @@ def revoke(ctx, cert_paths):
         with open(cert_path, 'rb') as f:
             crt = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
             ctx.obj['acme'].revoke(ComparableX509(crt))
+
+
+def _confirm_overwrite(filepath):
+    click.confirm('file %s exists; overwrite?' % filepath, abort=True)
 
 
 def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
