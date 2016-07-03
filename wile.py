@@ -22,6 +22,7 @@ try:  # if we're in the checked out tree, use setuptools_scm
 except LookupError:  # otherwise click will attempt to find it via pkg_resources
     _version = None
 
+
 @click.group(help='Simple client for ACME (letsencrypt) servers')
 @click.pass_obj
 @click.version_option(version=_version)
