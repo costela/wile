@@ -44,7 +44,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         webroot = len(url) > 1 and os.path.expanduser(url[1]) or webroot  # use previous webroot if not present
         if not webroot:
             logger.error('domain without webroot: %s' % domainroot)
-            continue
+            ctx.exit(1)
         domain = url[0]
         domain_list.append(domain)
 
