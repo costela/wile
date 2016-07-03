@@ -41,7 +41,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         if len(url) not in (1, 2):
             logger.error('could not parse %s as DOMAIN[:WEBROOT]; skipping' % domainroot)
             continue
-        webroot = len(url) > 1 and url[1] or webroot  # use previous webroot if not present
+        webroot = len(url) > 1 and os.path.expanduser(url[1]) or webroot  # use previous webroot if not present
         if not webroot:
             logger.error('domain without webroot: %s' % domainroot)
             continue
