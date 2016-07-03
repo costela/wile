@@ -66,13 +66,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
                 logger.error('%s: %s' % invalid_domain)
         ctx.exit(1)
 
-    if not overwrite and os.path.exists(keyfile_path):
-        _confirm_overwrite(keyfile_path)
-
-    with open(keyfile_path, 'wb') as f:
-        os.fchmod(f.fileno(), 0640)
-        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
-
+    # write optional chain
     chain = ctx.obj['acme'].fetch_chain(crt)
     certs = [crt.body]
     if with_chain:
@@ -85,12 +79,21 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
             for crt in chain:
                 f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
+    # write cert
     if not overwrite and os.path.exists(certfile_path):
         _confirm_overwrite(certfile_path)
 
     with open(certfile_path, 'wb') as f:
         for crt in certs:
             f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
+
+    # write key
+    if not overwrite and os.path.exists(keyfile_path):
+        _confirm_overwrite(keyfile_path)
+
+    with open(keyfile_path, 'wb') as f:
+        os.fchmod(f.fileno(), 0640)
+        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
 
 @cert.command(help='Revoke existing certificates')
