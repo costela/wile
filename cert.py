@@ -33,21 +33,12 @@ def cert():
 @click.argument('domainroots', metavar='DOMAIN[:WEBROOT]', nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, overwrite):
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
-    domain_list = list()
     authzrs = list()
-    webroot = None
-    for domainroot in domainroots:
-        url = domainroot.split(':')
-        if len(url) not in (1, 2):
-            logger.error('could not parse %s as DOMAIN[:WEBROOT]; skipping' % domainroot)
-            continue
-        webroot = len(url) > 1 and os.path.expanduser(url[1]) or webroot  # use previous webroot if not present
-        if not webroot:
-            logger.error('domain without webroot: %s' % domainroot)
-            ctx.exit(1)
-        domain = url[0]
-        domain_list.append(domain)
 
+    domain_list, webroot_list = _generate_domain_and_webroot_lists_from_args(ctx, domainroots)
+    basename = basename or domain_list[0]
+
+    for (domain, webroot) in zip(domain_list, webroot_list):
         logger.info('requesting challange for %s in %s' % (domain, webroot))
 
         authzr = ctx.obj['acme'].request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
@@ -71,8 +62,6 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
             for invalid_domain in invalid_domains:
                 logger.error('%s: %s' % invalid_domain)
         ctx.exit(1)
-
-    basename = basename or domain_list[0]
 
     if not overwrite and os.path.exists(os.path.join(output_dir, '%s.key' % basename)):
         click.confirm('file %s.key exists; overwrite?' % basename, abort=True)
@@ -109,6 +98,26 @@ def revoke(ctx, cert_paths):
         with open(cert_path, 'rb') as f:
             crt = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
             ctx.obj['acme'].revoke(ComparableX509(crt))
+
+
+def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
+    domain_list = list()
+    webroot_list = list()
+    webroot = None
+    for domainroot in domainroots:
+        url = domainroot.split(':')
+        if len(url) not in (1, 2):
+            logger.error('could not parse %s as DOMAIN[:WEBROOT]; skipping' % domainroot)
+            continue
+        webroot = len(url) > 1 and os.path.expanduser(url[1]) or webroot  # use previous webroot if not present
+        if not webroot:
+            logger.error('domain without webroot: %s' % domainroot)
+            ctx.exit(1)
+        domain = url[0]
+        domain_list.append(domain)
+        webroot_list.append(webroot)
+
+    return (domain_list, webroot_list)
 
 
 def _get_http_challenge(ctx, authzr):
