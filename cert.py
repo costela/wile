@@ -2,6 +2,7 @@
 import os
 import logging
 import errno
+from datetime import datetime
 
 import click
 from OpenSSL import crypto
@@ -13,6 +14,7 @@ from acme import messages
 from acme import errors
 from acme.jose.util import ComparableX509
 
+import argtypes
 
 logger = logging.getLogger('wile').getChild('cert')
 
@@ -29,9 +31,10 @@ def cert():
 @click.option('--output-dir', metavar='DIR', type=click.Path(exists=True, writable=True, readable=False, file_okay=False, dir_okay=True, resolve_path=True), default='.', help='Where to store created certificates (default: current directory)')
 @click.option('--basename', metavar='BASENAME', help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
 @click.option('--key-digest', metavar='DIGEST', default='sha256', show_default=True, help='The digest to use when signing the request with its key (must be supported by openssl)')
-@click.option('--overwrite/--no-overwrite', is_flag=True, default=False, show_default=True, help='Whether to overwrite existing certificate and key files (for automatic updates)')
-@click.argument('domainroots', metavar='DOMAIN[:WEBROOT]', nargs=-1, required=True)
-def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, overwrite):
+@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='1d', show_default=True, help='If a certificate is found and its expiration lies inside of this timespan, it will be automatically requested and overwritten; otherwise no request will be made. The format for this option is "1d" for one day. Supported units are hours, days and weeks.')
+@click.option('--force', is_flag=True, default=False, show_default=True, help='Whether to force a request to be made, even if a valid certificate is found')
+@click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]', nargs=-1, required=True)
+def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force):
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
     authzrs = list()
 
@@ -40,6 +43,16 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
     keyfile_path = os.path.join(output_dir, '%s.key' % basename)
     certfile_path = os.path.join(output_dir, '%s.crt' % basename)
     chainfile_path = os.path.join(output_dir, '%s.chain.crt' % basename)
+
+    if os.path.exists(certfile_path):
+        if not force and _is_valid_and_unchanged(certfile_path, domain_list, min_valid_time):
+            logger.info('found existing valid certificate (%s); not requesting a new one' % certfile_path)
+            ctx.exit(0)
+        elif force:
+            logger.info('found existing valid certificate (%s), but forcing renewal on request' % certfile_path)
+        else:
+            logger.info('existing certificate (%s) will expire inside of renewal time (%s) or has changes; requesting new one' % (certfile_path, min_valid_time))
+            force = True
 
     for (domain, webroot) in zip(domain_list, webroot_list):
         logger.info('requesting challange for %s in %s' % (domain, webroot))
@@ -72,7 +85,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
     if with_chain:
         certs.extend(chain)
     else:
-        if not overwrite and os.path.exists(chainfile_path):
+        if not force and os.path.exists(chainfile_path):
             _confirm_overwrite(chainfile_path)
 
         with open(chainfile_path, 'wb') as f:
@@ -80,15 +93,12 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
                 f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
     # write cert
-    if not overwrite and os.path.exists(certfile_path):
-        _confirm_overwrite(certfile_path)
-
     with open(certfile_path, 'wb') as f:
         for crt in certs:
             f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
     # write key
-    if not overwrite and os.path.exists(keyfile_path):
+    if not force and os.path.exists(keyfile_path):
         _confirm_overwrite(keyfile_path)
 
     with open(keyfile_path, 'wb') as f:
@@ -115,16 +125,11 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
     webroot_list = list()
     webroot = None
     for domainroot in domainroots:
-        url = domainroot.split(':')
-        if len(url) not in (1, 2):
-            logger.error('could not parse %s as DOMAIN[:WEBROOT]; skipping' % domainroot)
-            continue
-        webroot = len(url) > 1 and os.path.expanduser(url[1]) or webroot  # use previous webroot if not present
+        webroot = domainroot.webroot or webroot
         if not webroot:
-            logger.error('domain without webroot: %s' % domainroot)
+            logger.error('domain without webroot: %s' % domainroot.domain)
             ctx.exit(1)
-        domain = url[0]
-        domain_list.append(domain)
+        domain_list.append(domainroot.domain)
         webroot_list.append(webroot)
 
     return (domain_list, webroot_list)
@@ -138,6 +143,7 @@ def _get_http_challenge(ctx, authzr):
 
 
 def _store_webroot_validation(webroot, challb, val):
+    logger.info('storing validation of %s' % webroot)
     try:
         os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0755)
     except OSError as e:
@@ -147,6 +153,32 @@ def _store_webroot_validation(webroot, challb, val):
     with open(os.path.join(webroot, challb.path.strip('/')), 'wb') as outf:
         logger.info('storing validation to %s' % outf.name)
         outf.write(val)
+
+
+def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
+    with open(certfile_path, 'rb') as f:
+        crt = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+        # TODO: do we need to support the other possible ASN.1 date formats?
+        expiration = datetime.strptime(crt.get_notAfter(), '%Y%m%d%H%M%SZ')
+
+        # create a set of domain names in the cert (DN + SANs)
+        crt_domains = {dict(crt.get_subject().get_components())['CN']}
+        for i in xrange(crt.get_extension_count()):
+            ext = crt.get_extension(i)
+            if ext.get_short_name() == 'subjectAltName':
+                # we strip 'DNS:' without checking if it's there; if it
+                # isn't, the cert uses some other unsupported identifier,
+                # and is definitely different from the one we're creating
+                crt_domains = crt_domains.union(map(lambda x: x.strip()[4:], str(ext).split(',')))
+
+        if datetime.now() + min_valid_time > expiration:
+            logger.info('EXPIRATION')
+            return False
+        elif crt_domains != set(domains):
+            logger.info('DOMAINS: %s != %s' % (crt_domains, set(domains)))
+            return False
+        else:
+            return True
 
 
 def _generate_key_and_csr(domains, key_size, key_digest):
