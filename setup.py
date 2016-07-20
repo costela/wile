@@ -16,7 +16,7 @@ setup(
     license="GPLv3",
     keywords="letsencrypt acme ssl",
     url="https://github.com/costela/wile",
-    py_modules=['wile', 'reg', 'cert'],
+    py_modules=['wile', 'reg', 'cert', 'argtypes'],
     install_requires=[
         'acme >= 0.6',
         'click >= 6.0',
