@@ -36,6 +36,8 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
+        'Topic :: Internet :: Name Service (DNS)',
+        'Topic :: Security :: Cryptography',
         'Topic :: Utilities',
     ],
 )
