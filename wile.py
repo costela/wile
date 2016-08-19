@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 import os
 import logging
@@ -68,7 +68,7 @@ def get_or_gen_key(account_key_path, new_account_key_size):
             key_size=new_account_key_size,
             backend=default_backend()))
         try:
-            os.makedirs(os.path.dirname(account_key_path), 0750)
+            os.makedirs(os.path.dirname(account_key_path), 0o750)
         except os.error:
             pass  # dir already exists
         with open(account_key_path, 'wb') as key_file:

@@ -3,6 +3,8 @@ import os
 import logging
 import errno
 from datetime import datetime
+from six import b
+from six.moves import range
 
 import click
 from OpenSSL import crypto
@@ -102,7 +104,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         _confirm_overwrite(keyfile_path)
 
     with open(keyfile_path, 'wb') as f:
-        os.fchmod(f.fileno(), 0640)
+        os.fchmod(f.fileno(), 0o640)
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
 
@@ -145,27 +147,27 @@ def _get_http_challenge(ctx, authzr):
 def _store_webroot_validation(webroot, challb, val):
     logger.info('storing validation of %s' % webroot)
     try:
-        os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0755)
+        os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0o755)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
 
     with open(os.path.join(webroot, challb.path.strip('/')), 'wb') as outf:
         logger.info('storing validation to %s' % outf.name)
-        outf.write(val)
+        outf.write(b(val))
 
 
 def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
     with open(certfile_path, 'rb') as f:
         crt = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
         # TODO: do we need to support the other possible ASN.1 date formats?
-        expiration = datetime.strptime(crt.get_notAfter(), '%Y%m%d%H%M%SZ')
+        expiration = datetime.strptime(crt.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
 
         # create a set of domain names in the cert (DN + SANs)
-        crt_domains = {dict(crt.get_subject().get_components())['CN']}
-        for i in xrange(crt.get_extension_count()):
+        crt_domains = {dict(crt.get_subject().get_components())[b('CN')].decode('ascii')}
+        for i in range(crt.get_extension_count()):
             ext = crt.get_extension(i)
-            if ext.get_short_name() == 'subjectAltName':
+            if ext.get_short_name() == b'subjectAltName':
                 # we strip 'DNS:' without checking if it's there; if it
                 # isn't, the cert uses some other unsupported identifier,
                 # and is definitely different from the one we're creating
@@ -190,7 +192,7 @@ def _generate_key_and_csr(domains, key_size, key_digest):
     csr.set_pubkey(key)
 
     sans = ', '.join('DNS:{}'.format(d) for d in domains)
-    exts = [crypto.X509Extension('subjectAltName', False, sans)]
+    exts = [crypto.X509Extension(b'subjectAltName', False, b(sans))]
     csr.add_extensions(exts)
 
     csr.sign(key, str(key_digest))

@@ -18,6 +18,7 @@ setup(
     url="https://github.com/costela/wile",
     py_modules=['wile', 'reg', 'cert', 'argtypes'],
     install_requires=[
+        'six',
         'acme >= 0.6',
         'click >= 6.0',
         'pyOpenSSL',
