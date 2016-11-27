@@ -104,7 +104,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         _confirm_overwrite(keyfile_path)
 
     with open(keyfile_path, 'wb') as f:
-        os.fchmod(f.fileno(), 0o640)
+        os.chmod(f.name, 0o640)
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
 
