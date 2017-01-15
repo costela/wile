@@ -24,6 +24,11 @@ config = dict(
         'cryptography',
         'setuptools_scm',  # for run-time version-detect
     ],
+    tests_require=[
+        'mock',
+        'nose >= 1.0',
+    ],
+    test_suite='nose.',
     entry_points={
         'console_scripts': [
             'wile = wile:main',
