@@ -1,15 +1,14 @@
 #!/usr/bin/python
 import os
+import sys
 from setuptools import setup
 
 
 def read(filename):
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
-setup(
+config = dict(
     name="wile",
-    use_scm_version=True,
-    setup_requires=['setuptools_scm'],
     author="Leo Antunes",
     author_email="leo@costela.net",
     description=("A stripped down Let's Encrypt (ACME) client"),
@@ -42,3 +41,11 @@ setup(
         'Topic :: Utilities',
     ],
 )
+
+if 'sdist' in sys.argv:
+    config.update(dict(
+        use_scm_version=True,
+        setup_requires=['setuptools_scm'],
+    ))
+
+setup(**config)
