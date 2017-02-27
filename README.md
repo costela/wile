@@ -4,7 +4,7 @@ Wile is a simple [Let's Encrypt](https://letsencrypt.org) (ACME) client that onl
 
 The `.well-known` folder must also be accessible from external sources. I.e.: if you run a reverse proxy for some backend application, it should include an exception for this folder.
 
-Per default, no new request will be made if wile detects an existing certificate for the same requested domains with a validity of more than 1 day. This can be changed with the `--min-valid-time` and `--force` options.
+Per default, no new request will be made if wile detects an existing certificate for the same requested domains with a validity of more than 25 hours, 1 day plus 1 hour safety margin. This can be changed with the `--min-valid-time` and `--force` options.
 
 # Usage
 
@@ -33,3 +33,4 @@ You can also increase the default minimal validity time to one week, if you inte
 ```
 $ wile cert request --min-valid-time 1w example.com:/var/www/example.com/
 ```
+Adding some safety margin, `--min-valid-time 8d` or `--min-valid-time $((24*7+1))h` are recommended for weekly cron operation.

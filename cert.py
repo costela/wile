@@ -33,7 +33,7 @@ def cert():
 @click.option('--output-dir', metavar='DIR', type=click.Path(exists=True, writable=True, readable=False, file_okay=False, dir_okay=True, resolve_path=True), default='.', help='Where to store created certificates (default: current directory)')
 @click.option('--basename', metavar='BASENAME', help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
 @click.option('--key-digest', metavar='DIGEST', default='sha256', show_default=True, help='The digest to use when signing the request with its key (must be supported by openssl)')
-@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='1d', show_default=True, help='If a certificate is found and its expiration lies inside of this timespan, it will be automatically requested and overwritten; otherwise no request will be made. The format for this option is "1d" for one day. Supported units are hours, days and weeks.')
+@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='25h', show_default=True, help='If a certificate is found and its expiration lies inside of this timespan, it will be automatically requested and overwritten; otherwise no request will be made. The format for this option is "1d" for one day. Supported units are hours, days and weeks.')
 @click.option('--force', is_flag=True, default=False, show_default=True, help='Whether to force a request to be made, even if a valid certificate is found')
 @click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]', nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force):
