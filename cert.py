@@ -28,7 +28,7 @@ def cert():
 
 @cert.command(help='''Request a new certificate for the provided domains and respective webroot paths. If a webroot is not provided for a domain, the one of the previous domain is used.''')
 @click.pass_context
-@click.option('--with-chain/--separate-chain', is_flag=True, default=True, show_default=True, help='Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a separate .chain.crt file, containing only the signing certificates up to the root')
+@click.option('--with-chain/--separate-chain', is_flag=True, default=True, show_default=False, help='Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a separate .chain.crt file, containing only the signing certificates up to the root  [default: with chain]')
 @click.option('--key-size', '-s', metavar='SIZE', type=int, default=2048, show_default=True, help='Size in bits for the generated certificate\'s key')
 @click.option('--output-dir', metavar='DIR', type=click.Path(exists=True, writable=True, readable=False, file_okay=False, dir_okay=True, resolve_path=True), default='.', help='Where to store created certificates (default: current directory)')
 @click.option('--basename', metavar='BASENAME', help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
