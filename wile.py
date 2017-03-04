@@ -87,7 +87,7 @@ def get_or_gen_key(account_key_path, new_account_key_size):
 
 def ask_for_password_or_no_crypto(key_path):
     # we can't use prompt's "default" ad "value_proc" arguments because we monkeypatch prompt in test_wile.py
-    password = click.prompt('(optional) Password for %s' % key_path,
+    password = click.prompt('(optional) Password for %s' % key_path, default='',
                             hide_input=True, confirmation_prompt=True, show_default=False)
     if password:
         return serialization.BestAvailableEncryption(password)
