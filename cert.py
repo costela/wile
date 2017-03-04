@@ -90,8 +90,8 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         if e.exhausted:
             logger.error('validation timed out for the following domains: %s' % ', '.join(authzr.body.identifier for
                                                                                           authzr in e.exhausted))
-        invalid_domains = [(authzr.body.identifier.value, _get_http_challenge(ctx, authzr).error.detail) for authzr in
-                           e.updated.values() if authzr.body.status == messages.STATUS_INVALID]
+        invalid_domains = [(e_authzr.body.identifier.value, _get_http_challenge(ctx, e_authzr).error.detail)
+                           for e_authzr in e.updated.values() if e_authzr.body.status == messages.STATUS_INVALID]
         if invalid_domains:
             logger.error('validation invalid for the following domains:')
             for invalid_domain in invalid_domains:
