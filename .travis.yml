@@ -1,0 +1,22 @@
+language: python
+
+sudo: false
+
+env:
+  - TOXENV=py27
+  - TOXENV=py34
+  - TOXENV=py35
+  - TOXENV=py36
+  - TOXENV=flake8
+
+os:
+  - linux
+  - osx
+
+install: 
+  - apt-get install libssl-dev
+  - pip install tox
+
+script: tox
+
+cache: pip
