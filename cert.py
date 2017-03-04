@@ -1,4 +1,3 @@
-
 import os
 import logging
 import errno
@@ -35,8 +34,7 @@ def cert():
                       [default: with chain]''')
 @click.option('--key-size', '-s', metavar='SIZE', type=int, default=2048, show_default=True,
               help='Size in bits for the generated certificate\'s key')
-@click.option('--output-dir', metavar='DIR', type=click.Path(exists=True, writable=True, readable=False,
-              file_okay=False, dir_okay=True, resolve_path=True), default='.',
+@click.option('--output-dir', metavar='DIR', type=argtypes.WritablePathType, default='.',
               help='Where to store created certificates (default: current directory)')
 @click.option('--basename', metavar='BASENAME',
               help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
@@ -144,8 +142,11 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
     webroot_list = list()
     webroot = None
     for domainroot in domainroots:
-        webroot = domainroot.webroot or webroot
-        if not webroot:
+        if domainroot.webroot:
+            webroot = argtypes.WritablePathType(domainroot.webroot)
+        elif webroot:
+            pass  # if we already have one from the last element, just use it
+        else:
             logger.error('domain without webroot: %s' % domainroot.domain)
             ctx.exit(1)
         domain_list.append(domainroot.domain)
