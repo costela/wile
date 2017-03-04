@@ -7,6 +7,7 @@ from setuptools import setup
 def read(filename):
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
+
 config = dict(
     name="wile",
     author="Leo Antunes",

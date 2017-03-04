@@ -1,5 +1,6 @@
 import os
-import getpass
+
+import click
 
 import wile
 
@@ -7,8 +8,8 @@ import wile
 def test_get_or_gen_key(inside_tmpdir, monkeypatch):
     account_key_path = 'account.key'
     account_key_size = 2048
-    # TODO: we're assuming click uses getpass, which might change
-    monkeypatch.setattr(getpass, 'getpass', lambda *args: b'somepassword')
+
+    monkeypatch.setattr(click, 'prompt', lambda *args, **kwargs: b'somepassword')
 
     assert os.listdir(os.curdir) == []
     key1 = wile.get_or_gen_key(account_key_path, account_key_size)

@@ -63,9 +63,9 @@ def get_or_gen_key(account_key_path, new_account_key_size):
             try:
                 account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents, None, default_backend()))
             except TypeError:  # password required
+                password = click.prompt('Password for %s' % account_key_path, hide_input=True, default=None)
                 account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents,
-                                          bytes(click.prompt('Password for %s' % account_key_path,
-                                                             hide_input=True, default=None)), default_backend()))
+                                          bytes(password), default_backend()))
     else:
         logger.warn('no account key found; creating a new %d bit key in %s' % (new_account_key_size, account_key_path))
         account_key = jose.JWKRSA(key=rsa.generate_private_key(
@@ -86,10 +86,13 @@ def get_or_gen_key(account_key_path, new_account_key_size):
 
 
 def ask_for_password_or_no_crypto(key_path):
-    return click.prompt('(optional) Password for %s' % key_path,
-                        hide_input=True, confirmation_prompt=True, show_default=False,
-                        default=serialization.NoEncryption(),
-                        value_proc=serialization.BestAvailableEncryption)
+    # we can't use prompt's "default" ad "value_proc" arguments because we monkeypatch prompt in test_wile.py
+    password = click.prompt('(optional) Password for %s' % key_path,
+                            hide_input=True, confirmation_prompt=True, show_default=False)
+    if password:
+        return serialization.BestAvailableEncryption(password)
+    else:
+        return serialization.NoEncryption()
 
 
 def main():
