@@ -17,6 +17,8 @@ matrix:
   exclude:
     - os: osx
       env: TOXENV=flake8
+  allow_failures:
+    - os: osx
 
 addons:
   apt:
