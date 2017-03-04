@@ -26,16 +26,30 @@ def cert():
     pass
 
 
-@cert.command(help='''Request a new certificate for the provided domains and respective webroot paths. If a webroot is not provided for a domain, the one of the previous domain is used.''')
+@cert.command(help='''Request a new certificate for the provided domains and respective webroot paths. \
+                      If a webroot is not provided for a domain, the one of the previous domain is used.''')
 @click.pass_context
-@click.option('--with-chain/--separate-chain', is_flag=True, default=True, show_default=False, help='Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a separate .chain.crt file, containing only the signing certificates up to the root  [default: with chain]')
-@click.option('--key-size', '-s', metavar='SIZE', type=int, default=2048, show_default=True, help='Size in bits for the generated certificate\'s key')
-@click.option('--output-dir', metavar='DIR', type=click.Path(exists=True, writable=True, readable=False, file_okay=False, dir_okay=True, resolve_path=True), default='.', help='Where to store created certificates (default: current directory)')
-@click.option('--basename', metavar='BASENAME', help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
-@click.option('--key-digest', metavar='DIGEST', default='sha256', show_default=True, help='The digest to use when signing the request with its key (must be supported by openssl)')
-@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='25h', show_default=True, help='If a certificate is found and its expiration lies inside of this timespan, it will be automatically requested and overwritten; otherwise no request will be made. The format for this option is "1d" for one day. Supported units are hours, days and weeks.')
-@click.option('--force', is_flag=True, default=False, show_default=True, help='Whether to force a request to be made, even if a valid certificate is found')
-@click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]', nargs=-1, required=True)
+@click.option('--with-chain/--separate-chain', is_flag=True, default=True, show_default=False,
+              help='''Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a \
+                      separate .chain.crt file, containing only the signing certificates up to the root \
+                      [default: with chain]''')
+@click.option('--key-size', '-s', metavar='SIZE', type=int, default=2048, show_default=True,
+              help='Size in bits for the generated certificate\'s key')
+@click.option('--output-dir', metavar='DIR', type=click.Path(exists=True, writable=True, readable=False,
+              file_okay=False, dir_okay=True, resolve_path=True), default='.',
+              help='Where to store created certificates (default: current directory)')
+@click.option('--basename', metavar='BASENAME',
+              help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
+@click.option('--key-digest', metavar='DIGEST', default='sha256', show_default=True,
+              help='The digest to use when signing the request with its key (must be supported by openssl)')
+@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='25h', show_default=True,
+              help='''If a certificate is found and its expiration lies inside of this timespan, it will be automatically \
+                      requested and overwritten; otherwise no request will be made. The format for this option is "1d" \
+                      for one day. Supported units are hours, days and weeks.''')
+@click.option('--force', is_flag=True, default=False, show_default=True,
+              help='Whether to force a request to be made, even if a valid certificate is found')
+@click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
+                nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force):
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
     authzrs = list()
@@ -53,7 +67,8 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         elif force:
             logger.info('found existing valid certificate (%s), but forcing renewal on request' % certfile_path)
         else:
-            logger.info('existing certificate (%s) will expire inside of renewal time (%s) or has changes; requesting new one' % (certfile_path, min_valid_time))
+            logger.info('''existing certificate (%s) will expire inside of renewal time (%s) or has changes; \
+                           requesting new one''' % (certfile_path, min_valid_time))
             force = True
 
     for (domain, webroot) in zip(domain_list, webroot_list):
@@ -73,8 +88,10 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         crt, updated_authzrs = ctx.obj['acme'].poll_and_request_issuance(csr, authzrs)
     except errors.PollError as e:
         if e.exhausted:
-            logger.error('validation timed out for the following domains: %s' % ', '.join(authzr.body.identifier for authzr in e.exhausted))
-        invalid_domains = [(authzr.body.identifier.value, _get_http_challenge(ctx, authzr).error.detail) for authzr in e.updated.values() if authzr.body.status == messages.STATUS_INVALID]
+            logger.error('validation timed out for the following domains: %s' % ', '.join(authzr.body.identifier for
+                                                                                          authzr in e.exhausted))
+        invalid_domains = [(authzr.body.identifier.value, _get_http_challenge(ctx, authzr).error.detail) for authzr in
+                           e.updated.values() if authzr.body.status == messages.STATUS_INVALID]
         if invalid_domains:
             logger.error('validation invalid for the following domains:')
             for invalid_domain in invalid_domains:

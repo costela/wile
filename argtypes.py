@@ -45,5 +45,6 @@ class _TimespanType(click.ParamType):
     def get_metavar(self, param):
         return 'TIME'
 
+
 DomainWebrootType = _DomainWebrootType()
 TimespanType = _TimespanType()
