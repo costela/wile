@@ -13,6 +13,11 @@ os:
   - linux
   - osx
 
+matrix:
+  exclude:
+    - os: osx
+      env: TOXENV=flake8
+
 addons:
   apt:
     packages:
