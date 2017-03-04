@@ -20,5 +20,6 @@ def test_get_or_gen_key(inside_tmpdir, monkeypatch):
 
 def test_wile_no_args(clirunner, inside_tmpdir):
     result = clirunner.invoke(wile.wile)
+    assert result.output_bytes.startswith(b'Usage:')
     assert result.exit_code == 0
     assert os.listdir(os.curdir) == []  # ensure it's a noop
