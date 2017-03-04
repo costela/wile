@@ -13,8 +13,12 @@ os:
   - linux
   - osx
 
+addons:
+  apt:
+    packages:
+      - libssl-dev
+
 install: 
-  - apt-get install libssl-dev
   - pip install tox
 
 script: tox
