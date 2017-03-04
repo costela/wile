@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/costela/wile.svg?branch=master)](https://travis-ci.org/costela/wile)
+
 # Overview
 
 Wile is a simple [Let's Encrypt](https://letsencrypt.org) (ACME) client that only supports the "webroot" method of validation. It only needs access to the root folder serving the domanis in question. Specifically, it only needs access to the `.well-known` sub-folder and therefore doesn't need root permissions.
