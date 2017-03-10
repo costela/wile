@@ -17,6 +17,9 @@ config = dict(
     keywords="letsencrypt acme ssl",
     url="https://github.com/costela/wile",
     packages=['wile'],
+    setup_requires=[
+        'pytest-runner',
+    ],
     install_requires=[
         'six',
         'acme >= 0.16.0',
@@ -25,6 +28,13 @@ config = dict(
         'cryptography',
         'setuptools_scm',  # for run-time version-detect
         'paramiko',
+    ],
+    tests_require=[
+        'backports.tempfile;python_version<"3.0"',
+        'mock',
+        'pytest',
+        'pytest-datafiles',
+        'testfixtures',
     ],
     entry_points={
         'console_scripts': [
@@ -47,7 +57,9 @@ config = dict(
 if 'sdist' in sys.argv:
     config.update(dict(
         use_scm_version=True,
-        setup_requires=['setuptools_scm'],
     ))
+    config['setup_requires'] += [
+        'setuptools_scm',
+    ]
 
 setup(**config)
