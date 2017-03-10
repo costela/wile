@@ -82,11 +82,13 @@ def get_or_gen_key(account_key_path, new_account_key_size):
             os.makedirs(os.path.dirname(account_key_path), 0o750)
         except os.error:
             pass  # dir already exists
+
+        encryption_algorithm = ask_for_password_or_no_crypto(account_key_path)
         with open(account_key_path, 'wb') as key_file:
             key_file.write(account_key.key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=ask_for_password_or_no_crypto(account_key_path)
+                encryption_algorithm=encryption_algorithm
             ))
     return account_key
 
