@@ -45,7 +45,7 @@ def wile(obj, directory_url, staging, account_key_path, new_account_key_size, ve
         directory_url = 'https://acme-staging.api.letsencrypt.org/directory'
     account_key = get_or_gen_key(account_key_path, new_account_key_size)
 
-    logger.debug('connecting to ACME directory at %s' % directory_url)
+    logger.debug('connecting to ACME directory at %s', directory_url)
     obj['account_key'] = account_key
     obj['acme'] = client.Client(directory_url, account_key)
 
@@ -57,7 +57,7 @@ wile.add_command(reg.register)
 def get_or_gen_key(account_key_path, new_account_key_size):
     account_key_path = os.path.expanduser(account_key_path)
     if os.path.exists(account_key_path):
-        logger.debug('opening existing account key %s' % account_key_path)
+        logger.debug('opening existing account key %s', account_key_path)
         with open(account_key_path, 'rb') as key_file:
             key_contents = key_file.read()
             try:
@@ -67,7 +67,7 @@ def get_or_gen_key(account_key_path, new_account_key_size):
                 account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents,
                                           password.encode('utf-8'), default_backend()))
     else:
-        logger.warn('no account key found; creating a new %d bit key in %s' % (new_account_key_size, account_key_path))
+        logger.warn('no account key found; creating a new %d bit key in %s', new_account_key_size, account_key_path)
         account_key = jose.JWKRSA(key=rsa.generate_private_key(
             public_exponent=65537,
             key_size=new_account_key_size,
@@ -86,7 +86,7 @@ def get_or_gen_key(account_key_path, new_account_key_size):
 
 
 def ask_for_password_or_no_crypto(key_path):
-    # we can't use prompt's "default" ad "value_proc" arguments because we monkeypatch prompt in test_wile.py
+    # we can't use prompt's "default" and "value_proc" arguments because we monkeypatch prompt in test_wile.py
     password = click.prompt('(optional) Password for %s' % key_path, default='',
                             hide_input=True, confirmation_prompt=True, show_default=False)
     if password:

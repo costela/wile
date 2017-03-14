@@ -60,17 +60,17 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
 
     if os.path.exists(certfile_path):
         if not force and _is_valid_and_unchanged(certfile_path, domain_list, min_valid_time):
-            logger.info('found existing valid certificate (%s); not requesting a new one' % certfile_path)
+            logger.info('found existing valid certificate (%s); not requesting a new one', certfile_path)
             ctx.exit(0)
         elif force:
-            logger.info('found existing valid certificate (%s), but forcing renewal on request' % certfile_path)
+            logger.info('found existing valid certificate (%s), but forcing renewal on request', certfile_path)
         else:
             logger.info('''existing certificate (%s) will expire inside of renewal time (%s) or has changes; \
-                           requesting new one''' % (certfile_path, min_valid_time))
+                           requesting new one''', certfile_path, min_valid_time)
             force = True
 
     for (domain, webroot) in zip(domain_list, webroot_list):
-        logger.info('requesting challange for %s in %s' % (domain, webroot))
+        logger.info('requesting challange for %s in %s', domain, webroot)
 
         authzr = ctx.obj['acme'].request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
         authzrs.append(authzr)
@@ -86,8 +86,8 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         crt, updated_authzrs = ctx.obj['acme'].poll_and_request_issuance(csr, authzrs)
     except errors.PollError as e:
         if e.exhausted:
-            logger.error('validation timed out for the following domains: %s' % ', '.join(authzr.body.identifier for
-                                                                                          authzr in e.exhausted))
+            logger.error('validation timed out for the following domains: %s', ', '.join(authzr.body.identifier for
+                                                                                         authzr in e.exhausted))
         invalid_domains = [(e_authzr.body.identifier.value, _get_http_challenge(ctx, e_authzr).error.detail)
                            for e_authzr in e.updated.values() if e_authzr.body.status == messages.STATUS_INVALID]
         if invalid_domains:
@@ -105,22 +105,22 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         if not force and os.path.exists(chainfile_path):
             _confirm_overwrite(chainfile_path)
 
-        with open(chainfile_path, 'wb') as f:
+        with open(chainfile_path, 'wb') as chainfile:
             for crt in chain:
-                f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
+                chainfile.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
     # write cert
-    with open(certfile_path, 'wb') as f:
+    with open(certfile_path, 'wb') as certfile:
         for crt in certs:
-            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
+            certfile.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
     # write key
     if not force and os.path.exists(keyfile_path):
         _confirm_overwrite(keyfile_path)
 
-    with open(keyfile_path, 'wb') as f:
-        os.chmod(f.name, 0o640)
-        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+    with open(keyfile_path, 'wb') as keyfile:
+        os.chmod(keyfile.name, 0o640)
+        keyfile.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
 
 @cert.command(help='Revoke existing certificates')
@@ -128,8 +128,8 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
 @click.argument('cert_paths', metavar='CERT_FILE [CERT_FILE ...]', nargs=-1, required=True)
 def revoke(ctx, cert_paths):
     for cert_path in cert_paths:
-        with open(cert_path, 'rb') as f:
-            crt = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+        with open(cert_path, 'rb') as certfile:
+            crt = crypto.load_certificate(crypto.FILETYPE_PEM, certfile.read())
             ctx.obj['acme'].revoke(ComparableX509(crt))
 
 
@@ -147,7 +147,7 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
         elif webroot:
             pass  # if we already have one from the last element, just use it
         else:
-            logger.error('domain without webroot: %s' % domainroot.domain)
+            logger.error('domain without webroot: %s', domainroot.domain)
             ctx.exit(1)
         domain_list.append(domainroot.domain)
         webroot_list.append(webroot)
@@ -156,14 +156,14 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
 
 
 def _get_http_challenge(ctx, authzr):
-    for c in authzr.body.combinations:
-        if len(c) == 1 and isinstance(authzr.body.challenges[c[0]].chall, challenges.HTTP01):
-            return authzr.body.challenges[c[0]]
+    for combis in authzr.body.combinations:
+        if len(combis) == 1 and isinstance(authzr.body.challenges[combis[0]].chall, challenges.HTTP01):
+            return authzr.body.challenges[combis[0]]
     ctx.fail('no acceptable challenge type found; only HTTP01 supported')
 
 
 def _store_webroot_validation(webroot, challb, val):
-    logger.info('storing validation of %s' % webroot)
+    logger.info('storing validation of %s', webroot)
     try:
         os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0o755)
     except OSError as e:
@@ -171,31 +171,31 @@ def _store_webroot_validation(webroot, challb, val):
             raise
 
     with open(os.path.join(webroot, challb.path.strip('/')), 'wb') as outf:
-        logger.info('storing validation to %s' % outf.name)
+        logger.info('storing validation to %s', outf.name)
         outf.write(b(val))
 
 
 def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
-    with open(certfile_path, 'rb') as f:
-        crt = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+    with open(certfile_path, 'rb') as certfile:
+        crt = crypto.load_certificate(crypto.FILETYPE_PEM, certfile.read())
         # TODO: do we need to support the other possible ASN.1 date formats?
         expiration = datetime.strptime(crt.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
 
         # create a set of domain names in the cert (DN + SANs)
         crt_domains = {dict(crt.get_subject().get_components())[b('CN')].decode('ascii')}
-        for i in range(crt.get_extension_count()):
-            ext = crt.get_extension(i)
+        for ext_idx in range(crt.get_extension_count()):
+            ext = crt.get_extension(ext_idx)
             if ext.get_short_name() == b'subjectAltName':
                 # we strip 'DNS:' without checking if it's there; if it
                 # isn't, the cert uses some other unsupported identifier,
                 # and is definitely different from the one we're creating
-                crt_domains = crt_domains.union(map(lambda x: x.strip()[4:], str(ext).split(',')))
+                crt_domains = crt_domains.union((x.strip()[4:] for x in str(ext).split(',')))
 
         if datetime.now() + min_valid_time > expiration:
             logger.info('EXPIRATION')
             return False
         elif crt_domains != set(domains):
-            logger.info('DOMAINS: %s != %s' % (crt_domains, set(domains)))
+            logger.info('DOMAINS: %s != %s', crt_domains, set(domains))
             return False
         else:
             return True
