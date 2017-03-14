@@ -45,11 +45,7 @@ def wile(ctx, obj, directory_url, staging, account_key_path, new_account_key_siz
     if staging:
         directory_url = 'https://acme-staging.api.letsencrypt.org/directory'
 
-    try:
-        account_key = get_or_gen_key(account_key_path, new_account_key_size)
-    except ValueError as e:
-        logger.error('regarding %s: %s' % (account_key_path, str(e)))
-        ctx.exit(1)
+    account_key = get_or_gen_key(ctx, account_key_path, new_account_key_size)
 
     logger.debug('connecting to ACME directory at %s', directory_url)
     obj['account_key'] = account_key
@@ -60,18 +56,23 @@ wile.add_command(cert.cert)
 wile.add_command(reg.register)
 
 
-def get_or_gen_key(account_key_path, new_account_key_size):
+def get_or_gen_key(ctx, account_key_path, new_account_key_size):
     account_key_path = os.path.expanduser(account_key_path)
     if os.path.exists(account_key_path):
         logger.debug('opening existing account key %s', account_key_path)
         with open(account_key_path, 'rb') as key_file:
             key_contents = key_file.read()
             try:
-                account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents, None, default_backend()))
-            except TypeError:  # password required
-                password = click.prompt('Password for %s' % account_key_path, hide_input=True, default=None)
-                account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents,
-                                          password.encode('utf-8'), default_backend()))
+                try:
+                    account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents, None,
+                                              default_backend()))
+                except TypeError:  # password required
+                    password = click.prompt('Password for %s' % account_key_path, hide_input=True, default=None)
+                    key = serialization.load_pem_private_key(key_contents, password.encode('utf-8'), default_backend())
+                    account_key = jose.JWKRSA(key=key)
+            except ValueError as e:
+                logger.error('could not open key %s: %s', account_key_path, e)
+                ctx.exit(1)
     else:
         logger.warn('no account key found; creating a new %d bit key in %s', new_account_key_size, account_key_path)
         account_key = jose.JWKRSA(key=rsa.generate_private_key(
