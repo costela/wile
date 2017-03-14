@@ -65,7 +65,7 @@ def get_or_gen_key(account_key_path, new_account_key_size):
             except TypeError:  # password required
                 password = click.prompt('Password for %s' % account_key_path, hide_input=True, default=None)
                 account_key = jose.JWKRSA(key=serialization.load_pem_private_key(key_contents,
-                                          bytes(password), default_backend()))
+                                          password.encode('utf-8'), default_backend()))
     else:
         logger.warn('no account key found; creating a new %d bit key in %s' % (new_account_key_size, account_key_path))
         account_key = jose.JWKRSA(key=rsa.generate_private_key(
@@ -90,7 +90,7 @@ def ask_for_password_or_no_crypto(key_path):
     password = click.prompt('(optional) Password for %s' % key_path, default='',
                             hide_input=True, confirmation_prompt=True, show_default=False)
     if password:
-        return serialization.BestAvailableEncryption(password)
+        return serialization.BestAvailableEncryption(password.encode('utf-8'))
     else:
         return serialization.NoEncryption()
 

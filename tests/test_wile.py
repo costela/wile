@@ -9,7 +9,7 @@ def test_get_or_gen_key(inside_tmpdir, monkeypatch):
     account_key_path = 'account.key'
     account_key_size = 2048
 
-    monkeypatch.setattr(click, 'prompt', lambda *args, **kwargs: b'somepassword')
+    monkeypatch.setattr(click, 'prompt', lambda *args, **kwargs: u'somepassword')
 
     assert os.listdir(os.curdir) == []
     key1 = wile.get_or_gen_key(account_key_path, account_key_size)
