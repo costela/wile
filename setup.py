@@ -16,7 +16,7 @@ config = dict(
     license="GPLv3",
     keywords="letsencrypt acme ssl",
     url="https://github.com/costela/wile",
-    py_modules=['wile', 'reg', 'cert', 'argtypes'],
+    packages=['wile'],
     install_requires=[
         'six',
         'acme >= 0.6',

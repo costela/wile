@@ -3,8 +3,8 @@ import sys
 
 import pytest
 
-import argtypes
-import cert
+from wile import argtypes
+from wile import cert
 
 if sys.version_info > (3, 0):
     from unittest.mock import Mock
