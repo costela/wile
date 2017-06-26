@@ -8,13 +8,12 @@ from six.moves import range
 import click
 from OpenSSL import crypto
 
-from . import reg  # imported first for monkey-patching
-
 from acme import challenges
 from acme import messages
 from acme import errors
 from acme.jose.util import ComparableX509
 
+from . import reg
 from . import argtypes
 
 logger = logging.getLogger('wile').getChild('cert')

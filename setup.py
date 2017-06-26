@@ -19,7 +19,7 @@ config = dict(
     packages=['wile'],
     install_requires=[
         'six',
-        'acme >= 0.6',
+        'acme >= 0.14.2',
         'click >= 6.0',
         'pyOpenSSL',
         'cryptography',
