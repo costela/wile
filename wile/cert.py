@@ -1,3 +1,4 @@
+import atexit
 import os
 import logging
 import errno
@@ -172,6 +173,7 @@ def _store_webroot_validation(webroot, challb, val):
     with open(os.path.join(webroot, challb.path.strip('/')), 'wb') as outf:
         logger.info('storing validation to %s', outf.name)
         outf.write(b(val))
+        atexit.register(os.unlink, outf.name)
 
 
 def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
