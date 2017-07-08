@@ -5,7 +5,7 @@ import click
 import wile
 
 
-def test_get_or_gen_key(inside_tmpdir, monkeypatch):
+def test_get_or_gen_key(inside_tmpdir, logcapture, monkeypatch):
     account_key_path = 'account.key'
     account_key_size = 2048
 
@@ -13,8 +13,14 @@ def test_get_or_gen_key(inside_tmpdir, monkeypatch):
 
     assert os.listdir(os.curdir) == []
     key1 = wile.get_or_gen_key(None, account_key_path, account_key_size)
+    logcapture.check(
+        ('wile', 'WARNING', 'no account key found; creating a new 2048 bit key in account.key')
+    )
+    logcapture.clear()
     assert os.listdir(os.curdir) == [account_key_path]
+    
     key2 = wile.get_or_gen_key(None, account_key_path, account_key_size)
+    logcapture.check()
     assert key1 == key2
 
 

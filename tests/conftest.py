@@ -1,5 +1,8 @@
+import logging
+
 import pytest
 from click.testing import CliRunner
+from testfixtures import LogCapture
 
 
 @pytest.fixture
@@ -7,7 +10,9 @@ def clirunner():
     return CliRunner()
 
 
-@pytest.fixture
-def inside_tmpdir(tmpdir):
-    with tmpdir.as_cwd() as cd:
-        yield cd
+@pytest.fixture()
+def logcapture():
+    with LogCapture(level=logging.WARN) as lc:
+        yield lc
+
+
