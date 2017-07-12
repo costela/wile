@@ -1,19 +1,14 @@
 import os
-import sys
 
 import pytest
+from mock import Mock
 
 from wile import argtypes
 from wile import cert
 
-if sys.version_info > (3, 0):
-    from unittest.mock import Mock
-else:
-    from mock import Mock
-
 
 def test_generate_domain_and_webroot_lists_from_args_fail(inside_tmpdir):
-    ctx_mock = Mock()
+    ctx_mock = Mock(spec_set=['exit'])
     (dl, wrl) = cert._generate_domain_and_webroot_lists_from_args(ctx_mock, [
                     argtypes.DomainWebrootType('example.org'),
                 ])
@@ -26,7 +21,7 @@ def test_generate_domain_and_webroot_lists_from_args_fail(inside_tmpdir):
     (['example.org:folder1', 'foo.example.org:folder2'], ['example.org', 'foo.example.org'], ['folder1', 'folder2']),
 ])
 def test_generate_domain_and_webroot_lists_from_args_success(args, expected_dl, expected_wrl, inside_tmpdir):
-    ctx_mock = Mock()
+    ctx_mock = Mock(spec_set=['exit'])
 
     os.mkdir('folder1')
     os.mkdir('folder2')

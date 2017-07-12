@@ -19,20 +19,22 @@ try:  # if we're in the checked out tree, use setuptools_scm
 except LookupError:  # otherwise click will attempt to find it via pkg_resources
     _version = None
 
+LETSENCRYPT_URL = 'https://acme-v01.api.letsencrypt.org/directory'
+LETSENCRYPT_STAGING_URL = 'https://acme-staging.api.letsencrypt.org/directory'
+
 
 @click.group(help='Simple client for ACME (letsencrypt) servers')
-@click.pass_obj
 @click.pass_context
 @click.version_option(version=_version)
 @click.option('--staging', is_flag=True, default=False, help='use letsencrypt\'s staging server (for testing)')
-@click.option('--directory-url', metavar='URL', default='https://acme-v01.api.letsencrypt.org/directory',
+@click.option('--directory-url', metavar='URL', default=LETSENCRYPT_URL,
               show_default=True, help='URL for alternative ACME directory (will be overriden by --staging)')
 @click.option('--account-key', 'account_key_path', type=click.Path(dir_okay=False, allow_dash=True),
               default='~/.wile/account.key', show_default=True, help='path to existing account key')
 @click.option('--new-account-key-size', type=int, metavar='BITS', default=2048, show_default=True,
               help='bit size to use when creating a new account key; ignored for existing keys')
 @click.option('--verbose', '-v', count=True, help='be more verbose; can be passed multiple times')
-def wile(ctx, obj, directory_url, staging, account_key_path, new_account_key_size, verbose):
+def wile(ctx, directory_url, staging, account_key_path, new_account_key_size, verbose):
     if verbose > 1:
         logging.basicConfig(level=logging.DEBUG)
     elif verbose > 0:
@@ -41,13 +43,13 @@ def wile(ctx, obj, directory_url, staging, account_key_path, new_account_key_siz
         logging.basicConfig(level=logging.WARNING)
 
     if staging:
-        directory_url = 'https://acme-staging.api.letsencrypt.org/directory'
+        directory_url = LETSENCRYPT_STAGING_URL
 
     account_key = get_or_gen_key(ctx, account_key_path, new_account_key_size)
 
     logger.debug('connecting to ACME directory at %s', directory_url)
-    obj['account_key'] = account_key
-    obj['acme'] = client.Client(directory_url, account_key)
+    ctx.obj['account_key'] = account_key
+    ctx.obj['acme'] = client.Client(directory_url, account_key)
 
 
 wile.add_command(cert.cert)

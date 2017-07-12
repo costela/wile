@@ -49,6 +49,8 @@ def cert():
 @click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
                 nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force):
+    # TODO: try replacing with decorator
+    # (see https://github.com/pallets/click/issues/295)
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
     authzrs = list()
 

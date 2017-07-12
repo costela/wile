@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import click
 
 import wile
@@ -18,14 +19,29 @@ def test_get_or_gen_key(inside_tmpdir, logcapture, monkeypatch):
     )
     logcapture.clear()
     assert os.listdir(os.curdir) == [account_key_path]
-    
+
     key2 = wile.get_or_gen_key(None, account_key_path, account_key_size)
     logcapture.check()
     assert key1 == key2
 
 
-def test_wile_no_args(clirunner, inside_tmpdir):
-    result = clirunner.invoke(wile.wile)
+@pytest.mark.parametrize("args", [
+    [],
+    ['--help'],
+])
+def test_wile__no_args_or_help(args, clirunner, acmeclientmock):
+    result = clirunner.invoke(wile.wile, args=args)
     assert result.output_bytes.startswith(b'Usage:')
     assert result.exit_code == 0
+    assert os.listdir(os.path.expanduser('~')) == []
     assert os.listdir(os.curdir) == []  # ensure it's a noop
+    assert not acmeclientmock.called
+
+
+def test_wile__version(clirunner, acmeclientmock):
+    result = clirunner.invoke(wile.wile, args=['--version'])
+    assert ('version %s' % wile._version) in str(result.output_bytes)
+    assert result.exit_code == 0
+    assert os.listdir(os.path.expanduser('~')) == []
+    assert os.listdir(os.curdir) == []  # ensure it's a noop
+    assert not acmeclientmock.called
