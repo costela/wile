@@ -1,9 +1,9 @@
 import os
 import logging
+from functools import partial
 
 import setuptools_scm
 import click
-from acme import client
 from acme import jose
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from . import cert
 from . import reg
+from .lazyclient import LazyClient
 
 logger = logging.getLogger('wile')
 
@@ -45,11 +46,10 @@ def wile(ctx, directory_url, staging, account_key_path, new_account_key_size, ve
     if staging:
         directory_url = LETSENCRYPT_STAGING_URL
 
-    account_key = get_or_gen_key(ctx, account_key_path, new_account_key_size)
+    account_key_callback = partial(get_or_gen_key, ctx, account_key_path, new_account_key_size)
 
     logger.debug('connecting to ACME directory at %s', directory_url)
-    ctx.obj['account_key'] = account_key
-    ctx.obj['acme'] = client.Client(directory_url, account_key)
+    ctx.obj.init(directory_url, account_key_callback)
 
 
 wile.add_command(cert.cert)
@@ -105,4 +105,4 @@ def ask_for_password_or_no_crypto(key_path):
 
 
 def main():
-    return wile(obj={})
+    return wile(obj=LazyClient())

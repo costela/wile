@@ -6,7 +6,7 @@ import click
 import wile
 
 
-def test_get_or_gen_key(inside_tmpdir, logcapture, monkeypatch):
+def test_wile__get_or_gen_key(inside_tmpdir, logcapture, monkeypatch):
     account_key_path = 'account.key'
     account_key_size = 2048
 

@@ -8,6 +8,8 @@ from click.testing import CliRunner
 from testfixtures import LogCapture
 from acme import client
 
+from wile.lazyclient import LazyClient
+
 if sys.version_info.major < 3:
     import backports.tempfile as tempfile
 else:
@@ -44,10 +46,9 @@ def acmeclientmock(monkeypatch):
 
 
 @pytest.fixture()
-def ctxmock():
-    obj_dict = {}
-    ctx = Mock()
-    ctx.__getitem__ = Mock(side_effect=lambda k: obj_dict[k])
-    ctx.__setitem__ = Mock(side_effect=lambda k, v: obj_dict.__setitem__(k, v))
-    ctx.keys = obj_dict.keys
-    return ctx
+def objmock():
+    '''
+    This mocks the click "obj" argument passed around between different subcommands
+    '''
+    objMock = Mock(spec_set=LazyClient)
+    return objMock
