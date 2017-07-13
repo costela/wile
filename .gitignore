@@ -98,3 +98,6 @@ ENV/
 # IDEs
 .idea
 .vscode
+
+# docker testing
+.bash_history
