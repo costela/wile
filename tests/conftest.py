@@ -41,3 +41,13 @@ def acmeclientmock(monkeypatch):
     acmeClientMock = Mock(spec_set=[])
     monkeypatch.setattr(client, 'Client', acmeClientMock)
     return acmeClientMock
+
+
+@pytest.fixture()
+def ctxmock():
+    obj_dict = {}
+    ctx = Mock()
+    ctx.__getitem__ = Mock(side_effect=lambda k: obj_dict[k])
+    ctx.__setitem__ = Mock(side_effect=lambda k, v: obj_dict.__setitem__(k, v))
+    ctx.keys = obj_dict.keys
+    return ctx
