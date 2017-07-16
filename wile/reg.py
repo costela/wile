@@ -10,8 +10,14 @@ logger = logging.getLogger('wile').getChild('register')
 
 @click.command(help='Register a new account key or update an existing registration')
 @click.pass_context
-@click.option('--email', '-e', metavar='EMAIL')
-@click.option('--phone', '-p', metavar='PHONE')
+@click.option('--email', '-e', metavar='EMAIL', help='email for contact')
+# telephone contact hasn't been supported by Boulder since a while:
+# https://github.com/letsencrypt/boulder/commit/03427ccb810731eecaf32f70a1d21a0001a4abe7
+#
+# but it's still in the specs:
+# https://tools.ietf.org/html/draft-ietf-acme-acme-07#section-7.1.2
+@click.option('--phone', '-p', metavar='PHONE', help='telephone number for contact; this is not supported by Let\'s'
+                                       'Encrypt, but is in the ACME specs, so other providers might support it.')
 @click.option('--auto-accept-tos', is_flag=True, default=False, show_default=True,
               help='Automatically accept directory\'s Terms of Service')
 def register(ctx, email, phone, auto_accept_tos, quiet=False):
@@ -42,7 +48,7 @@ def register(ctx, email, phone, auto_accept_tos, quiet=False):
 
     if not quiet:
         click.echo('Registration:')
-        click.echo('Email: %s' % (regr.body.emails,))
-        click.echo('Phone: %s' % (regr.body.phones,))
+        click.echo('Email: %s' % (regr.body.emails or ''))
+        click.echo('Phone: %s' % (regr.body.phones or ''))
     else:
         return regr
