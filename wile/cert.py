@@ -2,6 +2,7 @@ import atexit
 import os
 import logging
 import errno
+from collections import OrderedDict
 from datetime import datetime
 from six import b
 from six.moves import range
@@ -18,6 +19,21 @@ from . import reg
 from . import argtypes
 
 logger = logging.getLogger('wile').getChild('cert')
+
+# Taken from https://tools.ietf.org/html/rfc5280#section-5.3.1
+# Not all all supported by letsencrypt's boulder.
+REVOCATION_REASONS = OrderedDict((
+    ('unspecified', 0),
+    ('keyCompromise', 1),
+    ('CACompromise', 2),
+    ('affiliationChanged', 3),
+    ('superseded', 4),
+    ('cessationOfOperation', 5),
+    ('certificateHold', 6),
+    ('removeFromCRL', 8),
+    ('privilegeWithdrawn', 9),
+    ('AACompromise', 10),
+))
 
 
 @click.group(help='Certificate management')
@@ -76,7 +92,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         authzrs.append(authzr)
 
         challb = _get_http_challenge(ctx, authzr)
-        chall_response, chall_validation = challb.response_and_validation(ctx.obj['account_key'])
+        chall_response, chall_validation = challb.response_and_validation(ctx.obj.account_key)
         _store_webroot_validation(webroot, challb, chall_validation)
         ctx.obj.acme.answer_challenge(challb, chall_response)
 
@@ -97,7 +113,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
         ctx.exit(1)
 
     # write optional chain
-    chain = ctx.obj['acme'].fetch_chain(crt)
+    chain = ctx.obj.acme.fetch_chain(crt)
     certs = [crt.body]
     if with_chain:
         certs.extend(chain)
@@ -125,12 +141,18 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
 
 @cert.command(help='Revoke existing certificates')
 @click.pass_context
+@click.option('--reason', metavar='REASON', default='unspecified', type=click.Choice(REVOCATION_REASONS.keys()),
+              show_default=True, help='reason for revoking certificate. Valid values: %s; not all are supported by '
+                                      'Let\'s Encrypt' % REVOCATION_REASONS.keys())
 @click.argument('cert_paths', metavar='CERT_FILE [CERT_FILE ...]', nargs=-1, required=True)
-def revoke(ctx, cert_paths):
+def revoke(ctx, reason, cert_paths):
     for cert_path in cert_paths:
         with open(cert_path, 'rb') as certfile:
             crt = crypto.load_certificate(crypto.FILETYPE_PEM, certfile.read())
-            ctx.obj.acme.revoke(ComparableX509(crt))
+            try:
+                ctx.obj.acme.revoke(ComparableX509(crt), REVOCATION_REASONS[reason])
+            except messages.Error as e:
+                logger.error(e)
 
 
 def _confirm_overwrite(filepath):
