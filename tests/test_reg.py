@@ -16,8 +16,8 @@ from wile.lazyclient import LazyClient
     (['register', '--auto-accept-tos', '--phone', '555-6666'], 0, False, wile.LETSENCRYPT_URL,
      '', '555-6666'),
 ])
-def test_wile_register__xxx(args, exit_code, tos_asked, url, expected_email, expected_phone, clirunner, logcapture,
-                            acmeclientmock_factory):
+def test_wile_register__arg_combinations(args, exit_code, tos_asked, url, expected_email, expected_phone, clirunner,
+                                         logcapture, acmeclientmock_factory):
     acmeclientmock = acmeclientmock_factory(tos_asked)
 
     result = clirunner.invoke(wile.wile, args=args, obj=LazyClient())
@@ -41,6 +41,7 @@ def test_wile_register__help(clirunner, logcapture, acmeclientmock_factory):
     acmeclientmock = acmeclientmock_factory()
     result = clirunner.invoke(wile.wile, args=['register', '--help'], obj=LazyClient())
     assert result.exit_code == 0
+    assert result.output.startswith('Usage:')
     logcapture.check()
     assert os.listdir(os.path.expanduser('~')) == []
     assert os.listdir(os.curdir) == []

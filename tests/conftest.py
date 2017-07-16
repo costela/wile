@@ -67,7 +67,7 @@ def _acmeclientcmock(monkeypatch, ask_for_tos=True, emails='', phones=''):
     type(acmeRegistrationMock.body).phones = PropertyMock(side_effect=lambda: original_contacts['phones'])
 
     acmeClientInstanceMock = Mock(spec_set=['register', 'agree_to_tos', 'update_registration',
-                                            'query_registration'], **{
+                                            'query_registration', 'revoke'], **{
         'register.return_value': acmeRegistrationMock,
         'update_registration.return_value': acmeRegistrationMock,
         'update_registration.side_effect': upd_reg,
