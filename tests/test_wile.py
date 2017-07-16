@@ -29,7 +29,8 @@ def test_wile__get_or_gen_key(inside_tmpdir, logcapture, monkeypatch):
     [],
     ['--help'],
 ])
-def test_wile__no_args_or_help(args, clirunner, acmeclientmock):
+def test_wile__no_args_or_help(args, clirunner, acmeclientmock_factory):
+    acmeclientmock = acmeclientmock_factory()
     result = clirunner.invoke(wile.wile, args=args)
     assert result.output_bytes.startswith(b'Usage:')
     assert result.exit_code == 0
@@ -38,7 +39,8 @@ def test_wile__no_args_or_help(args, clirunner, acmeclientmock):
     assert not acmeclientmock.called
 
 
-def test_wile__version(clirunner, acmeclientmock):
+def test_wile__version(clirunner, acmeclientmock_factory):
+    acmeclientmock = acmeclientmock_factory()
     result = clirunner.invoke(wile.wile, args=['--version'])
     assert ('version %s' % wile._version) in str(result.output_bytes)
     assert result.exit_code == 0

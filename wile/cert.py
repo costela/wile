@@ -72,18 +72,18 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
     for (domain, webroot) in zip(domain_list, webroot_list):
         logger.info('requesting challange for %s in %s', domain, webroot)
 
-        authzr = ctx.obj['acme'].request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
+        authzr = ctx.obj.acme.request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
         authzrs.append(authzr)
 
         challb = _get_http_challenge(ctx, authzr)
         chall_response, chall_validation = challb.response_and_validation(ctx.obj['account_key'])
         _store_webroot_validation(webroot, challb, chall_validation)
-        ctx.obj['acme'].answer_challenge(challb, chall_response)
+        ctx.obj.acme.answer_challenge(challb, chall_response)
 
     key, csr = _generate_key_and_csr(domain_list, key_size, key_digest)
 
     try:
-        crt, updated_authzrs = ctx.obj['acme'].poll_and_request_issuance(csr, authzrs)
+        crt, updated_authzrs = ctx.obj.acme.poll_and_request_issuance(csr, authzrs)
     except errors.PollError as e:
         if e.exhausted:
             logger.error('validation timed out for the following domains: %s', ', '.join(authzr.body.identifier for
@@ -130,7 +130,7 @@ def revoke(ctx, cert_paths):
     for cert_path in cert_paths:
         with open(cert_path, 'rb') as certfile:
             crt = crypto.load_certificate(crypto.FILETYPE_PEM, certfile.read())
-            ctx.obj['acme'].revoke(ComparableX509(crt))
+            ctx.obj.acme.revoke(ComparableX509(crt))
 
 
 def _confirm_overwrite(filepath):
