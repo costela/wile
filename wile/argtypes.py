@@ -5,25 +5,36 @@ from collections import namedtuple
 
 import click
 
-_DomainWebrootTuple = namedtuple('DomainWebrootTuple', ['domain', 'webroot'])
+_DomainRemoteWebrootTuple = namedtuple('DomainRemoteWebrootTuple', ['domain', 'remote', 'webroot'])
 
 
-class _DomainWebrootType(click.ParamType):
+class _DomainRemoteWebrootType(click.ParamType):
     domain = None
+    remote = None
     webroot = None
 
     def convert(self, value, param, ctx):
-        if isinstance(value, _DomainWebrootTuple):
+        if isinstance(value, _DomainRemoteWebrootTuple):
             return value
         url = value.split(':')
-        if len(url) not in (1, 2):
-            self.fail('could not parse %s as DOMAIN[:WEBROOT]' % value)
+        if len(url) not in range(1, 5):
+            self.fail('could not parse %s as DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT]' % value)
         domain = url[0]
-        webroot = len(url) > 1 and os.path.expanduser(url[1]) or None
-        return _DomainWebrootTuple(domain=domain, webroot=webroot)
+        if len(url) > 2:
+            split_tmp = url[1].split('@')
+            if url[2].isdigit():
+                remote = (split_tmp[0], split_tmp[1], url[2])
+                webroot = len(url) == 4 and os.path.expanduser(url[3]) or None
+            else:
+                remote = (split_tmp[0], split_tmp[1], None)
+                webroot = os.path.expanduser(url[2])
+        else:
+            remote = None
+            webroot = len(url) > 1 and os.path.expanduser(url[1]) or None
+        return _DomainRemoteWebrootTuple(domain=domain, remote=remote, webroot=webroot)
 
     def get_metavar(self, param):
-        return 'DOMAIN[:WEBROOT]'
+        return 'DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT]'
 
 
 class _TimespanType(click.ParamType):
@@ -46,7 +57,7 @@ class _TimespanType(click.ParamType):
         return 'TIME'
 
 
-DomainWebrootType = _DomainWebrootType()
+DomainWebrootType = _DomainRemoteWebrootType()
 TimespanType = _TimespanType()
 WritablePathType = click.Path(exists=True, writable=True, readable=False, file_okay=False, dir_okay=True,
                               resolve_path=True)
