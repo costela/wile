@@ -8,6 +8,7 @@ from six import b
 from six.moves import range
 
 import click
+import paramiko
 from OpenSSL import crypto
 
 from acme import challenges
@@ -62,13 +63,19 @@ def cert():
                       for one day. Supported units are hours, days and weeks.''')
 @click.option('--force', is_flag=True, default=False, show_default=True,
               help='Whether to force a request to be made, even if a valid certificate is found')
-@click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
-                nargs=-1, required=True)
-def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force):
+@click.option('--ssh-private-key', type=click.Path(exists=True, file_okay=True, dir_okay=False),
+              default='~/.ssh/id_rsa', show_default=True, help='path to SSH private key')
+@click.option('--ssh-private-key-pass', prompt=True, hide_input=True, default=lambda: os.environ.get('WILE_SSH_PASS', ''),
+              help='SSH private key password')
+@click.option('--ssh-private-key-type', default='RSA', show_default=True, help='SSH private key type')
+@click.argument('domainroots', 'DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT]', type=argtypes.DomainRemoteWebrootType,
+                metavar='DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT]', nargs=-1, required=True)
+def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force,
+            ssh_private_key, ssh_private_key_pass, ssh_private_key_type):
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
     authzrs = list()
 
-    domain_list, webroot_list = _generate_domain_and_webroot_lists_from_args(ctx, domainroots)
+    domain_list, remote_list, webroot_list = _generate_domain_and_webroot_lists_from_args(ctx, domainroots)
     basename = basename or domain_list[0]
     keyfile_path = os.path.join(output_dir, '%s.key' % basename)
     certfile_path = os.path.join(output_dir, '%s.crt' % basename)
@@ -85,15 +92,20 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
                            requesting new one''', certfile_path, min_valid_time)
             force = True
 
-    for (domain, webroot) in zip(domain_list, webroot_list):
-        logger.info('requesting challange for %s in %s', domain, webroot)
+    for (domain, remote, webroot) in zip(domain_list, remote_list, webroot_list):
+        if not remote or remote.count(None) is len(remote):
+            logger.info('requesting challange for %s in %s', domain, webroot)
+            remote = None
+        else:
+            logger.info('requesting challange for %s in %s on %s', domain, webroot, remote[1])
+            remote += (ssh_private_key, ssh_private_key_pass, ssh_private_key_type,)
 
         authzr = ctx.obj.acme.request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
         authzrs.append(authzr)
 
         challb = _get_http_challenge(ctx, authzr)
         chall_response, chall_validation = challb.response_and_validation(ctx.obj.account_key)
-        _store_webroot_validation(webroot, challb, chall_validation)
+        _store_webroot_validation(ctx, remote, webroot, challb, chall_validation)
         ctx.obj.acme.answer_challenge(challb, chall_response)
 
     key, csr = _generate_key_and_csr(domain_list, key_size, key_digest)
@@ -161,6 +173,7 @@ def _confirm_overwrite(filepath):
 
 def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
     domain_list = list()
+    remote_list = list()
     webroot_list = list()
     webroot = None
     for domainroot in domainroots:
@@ -172,9 +185,10 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
             logger.error('domain without webroot: %s', domainroot.domain)
             ctx.exit(1)
         domain_list.append(domainroot.domain)
+        remote_list.append(domainroot.remote)
         webroot_list.append(webroot)
 
-    return (domain_list, webroot_list)
+    return (domain_list, remote_list, webroot_list)
 
 
 def _get_http_challenge(ctx, authzr):
@@ -184,18 +198,50 @@ def _get_http_challenge(ctx, authzr):
     ctx.fail('no acceptable challenge type found; only HTTP01 supported')
 
 
-def _store_webroot_validation(webroot, challb, val):
+def _store_webroot_validation(ctx, remote, webroot, challb, val):
     logger.info('storing validation of %s', webroot)
-    try:
-        os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0o755)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+    chall_path = os.path.join(webroot, challb.path.strip('/'))
+    if not remote:
+        try:
+            os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0o755)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
-    with open(os.path.join(webroot, challb.path.strip('/')), 'wb') as outf:
-        logger.info('storing validation to %s', outf.name)
-        outf.write(b(val))
-        atexit.register(os.unlink, outf.name)
+        with open(chall_path, 'wb') as outf:
+            logger.info('storing validation to %s', outf.name)
+            outf.write(b(val))
+            atexit.register(os.unlink, outf.name)
+    else:
+        username = remote[0] is not None and remote[0] or os.environ.get('USER')
+        hostname = remote[1]
+        port = remote[2] is not None and int(remote[2]) or 22
+        private_key_path = os.path.expanduser(remote[3])
+        private_key_pass = remote[4] is not '' and remote[4] or None
+        private_key_type = remote[5]
+        if private_key_type == 'RSA':
+            private_key = paramiko.RSAKey.from_private_key_file(private_key_path, password=private_key_pass)
+        elif private_key_type == 'ECDSA':
+            private_key = paramiko.ECDSAKey.from_private_key_file(private_key_path, password=private_key_pass)
+        elif private_key_type == 'DSA' or private_key_type == 'DSS':
+            private_key = paramiko.DSSKey.from_private_key_file(private_key_path, password=private_key_pass)
+        else:
+            ctx.fail('invalid SSH key type (valid: RSA, ECDSA, DSA, DSS)')
+        try:
+            transport = paramiko.Transport((hostname, port))
+            transport.connect(hostkey=None, username=username, pkey=private_key)
+            sftp = paramiko.SFTPClient.from_transport(transport)
+            with sftp.open(chall_path, 'wb') as outf:
+                logger.info('storing validation to %s:%s' % (remote[1], chall_path))
+                outf.write(b(val))
+                atexit.register(os.unlink, outf.name)
+            transport.close()
+        except Exception as e:
+            try:
+                transport.close()
+            except:
+                pass
+            ctx.fail('SFTP connection failed')
 
 
 def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
