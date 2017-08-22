@@ -60,7 +60,7 @@ class _TimespanType(click.ParamType):
         return 'TIME'
 
 
-DomainWebrootType = _DomainRemoteWebrootType()
+DomainRemoteWebrootType = _DomainRemoteWebrootType()
 TimespanType = _TimespanType()
 WritablePathType = click.Path(exists=True, writable=True, readable=False, file_okay=False, dir_okay=True,
                               resolve_path=True)
