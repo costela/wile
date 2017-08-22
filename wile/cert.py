@@ -94,10 +94,10 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
 
     for (domain, remote, webroot) in zip(domain_list, remote_list, webroot_list):
         if not remote or remote.count(None) is len(remote):
-            logger.info('requesting challange for %s in %s', domain, webroot)
+            logger.info('requesting challenge for %s in %s', domain, webroot)
             remote = None
         else:
-            logger.info('requesting challange for %s in %s on %s', domain, webroot, remote[1])
+            logger.info('requesting challenge for %s in %s on %s', domain, webroot, remote[1])
             remote += (ssh_private_key, ssh_private_key_pass, ssh_private_key_type,)
 
         authzr = ctx.obj.acme.request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
