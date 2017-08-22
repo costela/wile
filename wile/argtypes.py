@@ -23,7 +23,10 @@ class _DomainRemoteWebrootType(click.ParamType):
         if len(url) > 2:
             split_tmp = url[1].split('@')
             if url[2].isdigit():
-                remote = (split_tmp[0], split_tmp[1], url[2])
+                if len(split_tmp) > 1:
+                    remote = (split_tmp[0], split_tmp[1], url[2])
+                else:
+                    remote = (None, split_tmp[0], url[2])
                 webroot = len(url) == 4 and os.path.expanduser(url[3]) or None
             else:
                 remote = (split_tmp[0], split_tmp[1], None)
