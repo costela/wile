@@ -24,6 +24,7 @@ config = dict(
         'pyOpenSSL',
         'cryptography',
         'setuptools_scm',  # for run-time version-detect
+        'paramiko',
     ],
     entry_points={
         'console_scripts': [
