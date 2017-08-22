@@ -64,10 +64,11 @@ def cert():
 @click.option('--force', is_flag=True, default=False, show_default=True,
               help='Whether to force a request to be made, even if a valid certificate is found')
 @click.option('--ssh-private-key', type=click.Path(exists=True, file_okay=True, dir_okay=False),
-              default='~/.ssh/id_rsa', show_default=True, help='path to SSH private key')
-@click.option('--ssh-private-key-pass', prompt=True, hide_input=True, default=lambda: os.environ.get('WILE_SSH_PASS', ''),
+              default='~/.ssh/id_rsa', show_default=True, help='Path to SSH private key')
+@click.option('--ssh-private-key-pass', default=lambda: os.environ.get('WILE_SSH_PASS', ''),
               help='SSH private key password')
-@click.option('--ssh-private-key-type', default='RSA', show_default=True, help='SSH private key type')
+@click.option('--ssh-private-key-type', type=click.Choice(['rsa', 'ecdsa', 'dsa', 'dss']), default='rsa',
+              show_default=True, help='SSH private key type')
 @click.argument('domainroots', 'DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT]', type=argtypes.DomainRemoteWebrootType,
                 metavar='DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT]', nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest, min_valid_time, force,
@@ -218,15 +219,13 @@ def _store_webroot_validation(ctx, remote, webroot, challb, val):
         port = remote[2] is not None and int(remote[2]) or 22
         private_key_path = os.path.expanduser(remote[3])
         private_key_pass = remote[4] is not '' and remote[4] or None
-        private_key_type = remote[5]
+        private_key_type = remote[5].upper()
         if private_key_type == 'RSA':
             private_key = paramiko.RSAKey.from_private_key_file(private_key_path, password=private_key_pass)
         elif private_key_type == 'ECDSA':
             private_key = paramiko.ECDSAKey.from_private_key_file(private_key_path, password=private_key_pass)
         elif private_key_type == 'DSA' or private_key_type == 'DSS':
             private_key = paramiko.DSSKey.from_private_key_file(private_key_path, password=private_key_pass)
-        else:
-            ctx.fail('invalid SSH key type (valid: RSA, ECDSA, DSA, DSS)')
         try:
             transport = paramiko.Transport((hostname, port))
             transport.connect(hostkey=None, username=username, pkey=private_key)
