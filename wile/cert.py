@@ -63,7 +63,7 @@ def cert():
                       for one day. Supported units are hours, days and weeks.''')
 @click.option('--force', is_flag=True, default=False, show_default=True,
               help='Whether to force a request to be made, even if a valid certificate is found')
-@click.option('--ssh-private-key', type=click.Path(exists=True, file_okay=True, dir_okay=False),
+@click.option('--ssh-private-key', type=click.Path(file_okay=True, dir_okay=False),
               default='~/.ssh/id_rsa', show_default=True, help='Path to SSH private key')
 @click.option('--ssh-private-key-pass', default=lambda: os.environ.get('WILE_SSH_PASS', ''),
               help='SSH private key password')
@@ -179,7 +179,10 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
     webroot = None
     for domainroot in domainroots:
         if domainroot.webroot:
-            webroot = argtypes.WritablePathType(domainroot.webroot)
+            if not domainroot.remote:
+                webroot = argtypes.WritablePathType(domainroot.webroot)
+            else:
+                webroot = domainroot.webroot
         elif webroot:
             pass  # if we already have one from the last element, just use it
         else:
@@ -233,7 +236,6 @@ def _store_webroot_validation(ctx, remote, webroot, challb, val):
             with sftp.open(chall_path, 'wb') as outf:
                 logger.info('storing validation to %s:%s' % (remote[1], chall_path))
                 outf.write(b(val))
-                atexit.register(os.unlink, outf.name)
             transport.close()
         except Exception as e:
             try:
