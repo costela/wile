@@ -95,7 +95,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
             force = True
 
     for (domain, webroot) in zip(domain_list, webroot_list):
-        logger.info('requesting challange for %s in %s', domain, webroot)
+        logger.info('requesting challenge for %s in %s', domain, webroot)
 
         authzr = ctx.obj.acme.request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
         authzrs.append(authzr)
