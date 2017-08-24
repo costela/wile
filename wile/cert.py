@@ -67,13 +67,10 @@ def cert():
 @click.option('--ssh-private-key',
               type=click.Path(file_okay=True, dir_okay=False),
               default=None, show_default=True, help='Path to SSH private key')
-@click.option('--ssh-private-key-pass', default=None, envvar='WILE_SSH_PASS',
-              help='SSH private key password')
 @click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
                 nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
-            key_digest, min_valid_time, force, ssh_private_key,
-            ssh_private_key_pass):
+            key_digest, min_valid_time, force, ssh_private_key):
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
     authzrs = list()
 
@@ -102,8 +99,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
 
         challb = _get_http_challenge(ctx, authzr)
         chall_response, chall_validation = challb.response_and_validation(ctx.obj.account_key)
-        _store_webroot_validation(ctx, webroot, ssh_private_key,
-                                  ssh_private_key_pass, challb,
+        _store_webroot_validation(ctx, webroot, ssh_private_key, challb,
                                   chall_validation)
         ctx.obj.acme.answer_challenge(challb, chall_response)
 
@@ -198,8 +194,7 @@ def _get_http_challenge(ctx, authzr):
     ctx.fail('no acceptable challenge type found; only HTTP01 supported')
 
 
-def _store_webroot_validation(ctx, webroot, ssh_private_key,
-                              ssh_private_key_pass, challb, val):
+def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
     logger.info('storing validation of %s', webroot)
     match = re.compile((r'^(?:(?:(?P<remote_user>[^@]+)@)?'
                         r'(?P<remote_host>[^@:]+)'
@@ -234,7 +229,7 @@ def _store_webroot_validation(ctx, webroot, ssh_private_key,
             ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
             ssh.connect(hostname=remote_host, port=remote_port,
                         username=remote_user, key_filename=ssh_private_key,
-                        password=ssh_private_key_pass)
+                        password=os.getenv('WILE_SSH_PASS'))
             sftp = ssh.open_sftp()
 
             with sftp.open(chall_path, 'wb') as outf:
