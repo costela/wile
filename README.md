@@ -6,33 +6,54 @@ Wile is a simple [Let's Encrypt](https://letsencrypt.org) (ACME) client that onl
 
 The `.well-known` folder must also be accessible from external sources. I.e.: if you run a reverse proxy for some backend application, it should include an exception for this folder.
 
-Per default, no new request will be made if wile detects an existing certificate for the same requested domains with a validity of more than 25 hours, 1 day plus 1 hour safety margin. This can be changed with the `--min-valid-time` and `--force` options.
-
 # Usage
+
+## Generating a certificate request
 
 Simple anonymous certificate request:
 ```
 $ wile cert request example.com:/var/www/example.com/
 ```
 
-Registration with contact information, and saving certs to some other location (default saves to current folder):
+Registration with contact information, and saving certs to some other location (by default the certificate is saved to current folder):
 ```
 $ wile register -e name@example.com
 $ wile cert request --output-dir /etc/ssl/private/ example.com:/var/www/example.com/
 ```
 
-Revoking a certificate:
+Certificate request using remote webroot validation:
 ```
-$ wile cert revoke /etc/ssl/private/example.com.crt
+$ wile cert request example.com:username@example.com:/var/www/example.com/
 ```
+
+Syntax for remote webroot validation argument is: DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT].
+
+Storing remote webroot validation is done via SFTP using SSH public key authentication. You can explicitly define path to your private key using `--ssh-private-key` option. Also, if your private key has been secured with a password you must provide your private key password using an ENV variable (`WILE_SSH_PASS='<your password>'`). Note that there are single quotes around the password so that your shell doesn't try to expand the symbols within the password.
 
 Note that you can also pass multiple domains with a single document root, which creates a certificate with [Subject Alternative Names](https://en.wikipedia.org/wiki/Subject_Alternative_Name).
 ```
 $ wile cert request example.com:/var/www/example.com/ www.example.com
 ```
 
-You can also increase the default minimal validity time to one week, if you intend on running wile via a weekly cronjob:
+In case of a remote webroot validation:
+```
+$ wile cert request example.com:username@example.com:/var/www/example.com/ www.example.com
+```
+
+## Revoking a certificate
+
+Simple anonymous certificate revocation:
+```
+$ wile cert revoke /etc/ssl/private/example.com.crt
+```
+
+## Certificate renewal
+
+Per default, no new request will be made if wile detects an existing certificate for the same requested domains with a validity of more than 25 hours, 1 day plus 1 hour safety margin. This can be changed with the `--min-valid-time` and `--force` options.
+
+You can also increase the default minimal validity time to one week, if you intend to run wile via a weekly cronjob:
 ```
 $ wile cert request --min-valid-time 1w example.com:/var/www/example.com/
 ```
+
 Adding some safety margin, `--min-valid-time 8d` or `--min-valid-time $((24*7+1))h` are recommended for weekly cron operation.
