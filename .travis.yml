@@ -14,19 +14,15 @@ python:
   - "3.5"
   - "3.6"
 
-env:
-  - TOXENV=py27
-  - TOXENV=py34
-  - TOXENV=py35
-  - TOXENV=py36
-  - TOXENV=flake8
+env: TOXENV=py
 
 matrix:
-  exclude:
+  include:
     - env: TOXENV=flake8
-      os: osx
+      os: linux
   allow_failures:
     - os: osx
+  fast_finish: true
 
 addons:
   apt:
