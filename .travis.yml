@@ -32,6 +32,6 @@ addons:
 install:
   - pip install tox
 
-script: tox -e $TOXENV
+script: tox
 
 cache: pip
