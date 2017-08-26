@@ -43,13 +43,13 @@ def cert():
     pass
 
 
-@cert.command(help='''Request a new certificate for the provided domains and respective webroot paths. \
-                      If a webroot is not provided for a domain, the one of the previous domain is used.''')
+@cert.command(help='Request a new certificate for the provided domains and respective webroot paths. '
+                   'If a webroot is not provided for a domain, the one supplied for the previous domain is used.')
 @click.pass_context
 @click.option('--with-chain/--separate-chain', is_flag=True, default=True, show_default=False,
-              help='''Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a \
-                      separate .chain.crt file, containing only the signing certificates up to the root \
-                      [default: with chain]''')
+              help='Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a '
+                   'separate .chain.crt file, containing only the signing certificates up to the root '
+                   '[default: with chain]')
 @click.option('--key-size', '-s', metavar='SIZE', type=int, default=2048, show_default=True,
               help='Size in bits for the generated certificate\'s key')
 @click.option('--output-dir', metavar='DIR', type=argtypes.WritablePathType, default='.',
@@ -59,9 +59,9 @@ def cert():
 @click.option('--key-digest', metavar='DIGEST', default='sha256', show_default=True,
               help='The digest to use when signing the request with its key (must be supported by openssl)')
 @click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='25h', show_default=True,
-              help='''If a certificate is found and its expiration lies inside of this timespan, it will be automatically \
-                      requested and overwritten; otherwise no request will be made. The format for this option is "1d" \
-                      for one day. Supported units are hours, days and weeks.''')
+              help='If a certificate is found and its expiration lies inside of this timespan, it will be '
+                   'automatically requested and overwritten; otherwise no request will be made. The format for this '
+                   'option is "1d" for one day. Supported units are hours, days and weeks.')
 @click.option('--force', is_flag=True, default=False, show_default=True,
               help='Whether to force a request to be made, even if a valid certificate is found')
 @click.option('--ssh-private-key',
@@ -87,8 +87,8 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
         elif force:
             logger.info('found existing valid certificate (%s), but forcing renewal on request', certfile_path)
         else:
-            logger.info('''existing certificate (%s) will expire inside of renewal time (%s) or has changes; \
-                           requesting new one''', certfile_path, min_valid_time)
+            logger.info('existing certificate (%s) will expire inside of renewal time (%s) or has changes; '
+                        'requesting new one', certfile_path, min_valid_time)
             force = True
 
     for (domain, webroot) in zip(domain_list, webroot_list):
