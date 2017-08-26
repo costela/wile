@@ -24,7 +24,7 @@ LETSENCRYPT_URL = 'https://acme-v01.api.letsencrypt.org/directory'
 LETSENCRYPT_STAGING_URL = 'https://acme-staging.api.letsencrypt.org/directory'
 
 
-@click.group(help='Simple client for ACME (letsencrypt) servers')
+@click.group()
 @click.pass_context
 @click.version_option(version=_version)
 @click.option('--staging', is_flag=True, default=False, help='use letsencrypt\'s staging server (for testing)')
@@ -36,6 +36,10 @@ LETSENCRYPT_STAGING_URL = 'https://acme-staging.api.letsencrypt.org/directory'
               help='bit size to use when creating a new account key; ignored for existing keys')
 @click.option('--verbose', '-v', count=True, help='be more verbose; can be passed multiple times')
 def wile(ctx, directory_url, staging, account_key_path, new_account_key_size, verbose):
+    '''
+    Simple client for ACME servers (e.g. letsencrypt).
+    '''
+
     if verbose > 1:
         logging.basicConfig(level=logging.DEBUG)
     elif verbose > 0:

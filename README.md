@@ -26,7 +26,7 @@ Certificate request using remote webroot validation:
 $ wile cert request example.com:username@example.com:/var/www/example.com/
 ```
 
-Syntax for remote webroot validation argument is: DOMAIN:[[[USER@]HOST[:PORT]:]WEBROOT].
+Syntax for remote webroot validation argument is: DOMAIN:[[[USER@]HOST[:PORT]:]PATH].
 
 Storing remote webroot validation is done via SFTP using SSH public key authentication. You can explicitly define path to your private key using `--ssh-private-key` option. Also, if your private key has been secured with a password you must provide your private key password using an ENV variable (`WILE_SSH_PASS='<your password>'`). Note that there are single quotes around the password so that your shell doesn't try to expand the symbols within the password.
 

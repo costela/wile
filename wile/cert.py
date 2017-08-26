@@ -38,13 +38,14 @@ REVOCATION_REASONS = OrderedDict((
 ))
 
 
-@click.group(help='Certificate management')
+@click.group()
 def cert():
-    pass
+    '''
+    Commands for certificate management.
+    '''
 
 
-@cert.command(help='Request a new certificate for the provided domains and respective webroot paths. '
-                   'If a webroot is not provided for a domain, the one supplied for the previous domain is used.')
+@cert.command()
 @click.pass_context
 @click.option('--with-chain/--separate-chain', is_flag=True, default=True, show_default=False,
               help='Whether to include the certificate\'s chain in the output certificate; --separate-chain implies a '
@@ -64,13 +65,22 @@ def cert():
                    'option is "1d" for one day. Supported units are hours, days and weeks.')
 @click.option('--force', is_flag=True, default=False, show_default=True,
               help='Whether to force a request to be made, even if a valid certificate is found')
-@click.option('--ssh-private-key',
-              type=click.Path(file_okay=True, dir_okay=False),
-              default=None, show_default=True, help='Path to SSH private key')
+@click.option('--ssh-private-key', type=click.Path(file_okay=True, dir_okay=False), default=None, show_default=True,
+              help='Path to SSH private key when using remote webroots. If not provided, the default paths will be '
+                   'searched. If an SSH agent is running, it will also be queried independently of this setting.')
 @click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
                 nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
             key_digest, min_valid_time, force, ssh_private_key):
+    '''
+    Request a new certificate for the provided domains and respective webroot paths.
+    If a webroot is not provided for a domain, the one supplied for the previous domain is used.\n
+    Each WEBROOT may be a local path or a remote path in the following format:
+    [[[USER@]HOST[:PORT]:]PATH].\n
+    In the second case an SSH connection will be made to the remote HOST and the ACME challanges will
+    be remotely verified.
+    '''
+
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
     authzrs = list()
 
@@ -146,13 +156,16 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
         keyfile.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
 
-@cert.command(help='Revoke existing certificates')
+@cert.command()
 @click.pass_context
 @click.option('--reason', metavar='REASON', default='unspecified', type=click.Choice(REVOCATION_REASONS.keys()),
               show_default=True, help='reason for revoking certificate. Valid values: %s; not all are supported by '
                                       'Let\'s Encrypt' % REVOCATION_REASONS.keys())
 @click.argument('cert_paths', metavar='CERT_FILE [CERT_FILE ...]', nargs=-1, required=True)
 def revoke(ctx, reason, cert_paths):
+    '''
+    Revoke existing certificates.
+    '''
     for cert_path in cert_paths:
         with open(cert_path, 'rb') as certfile:
             crt = crypto.load_certificate(crypto.FILETYPE_PEM, certfile.read())

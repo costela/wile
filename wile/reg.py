@@ -8,7 +8,7 @@ from acme import errors
 logger = logging.getLogger('wile').getChild('register')
 
 
-@click.command(help='Register a new account key or update an existing registration')
+@click.command()
 @click.pass_context
 @click.option('--email', '-e', metavar='EMAIL', help='email for contact')
 # telephone contact hasn't been supported by Boulder since a while:
@@ -21,6 +21,10 @@ logger = logging.getLogger('wile').getChild('register')
 @click.option('--auto-accept-tos', is_flag=True, default=False, show_default=True,
               help='Automatically accept directory\'s Terms of Service')
 def register(ctx, email, phone, auto_accept_tos, quiet=False):
+    '''
+    Register a new account key or update an existing registration.
+    '''
+
     logger.info('starting registration for email:"%s", phone:"%s"', email, phone)
     try:
         regr = ctx.obj.acme.register(messages.NewRegistration.from_data(email=email, phone=phone))
