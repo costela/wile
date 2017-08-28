@@ -7,6 +7,7 @@ import click
 
 _DomainWebrootTuple = namedtuple('DomainWebrootTuple', ['domain', 'webroot'])
 _WebrootTuple = namedtuple('WebrootTuple', ['remote_user', 'remote_host', 'remote_port', 'path'])
+_WebrootTuple.__new__.__defaults__ = (None,) * len(_WebrootTuple._fields)
 
 
 class _DomainWebrootType(click.ParamType):
@@ -34,8 +35,6 @@ class _DomainWebrootType(click.ParamType):
         remote_port = match.group('remote_port')
         if remote_port:  # will never be empty according to regex
             remote_port = int(remote_port)
-        else:
-            remote_port = 22  # .connect(port=None) times out
 
         if match.group('path'):
             path = match.group('path')

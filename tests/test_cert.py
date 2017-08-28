@@ -39,7 +39,7 @@ def test_generate_domain_and_webroot_lists_from_args__success(args, expected_dl,
     ctx_mock.exit.assert_not_called()
 
     assert dl == expected_dl
-    assert wrl == list(map(lambda f: os.path.join(os.path.abspath('.'), f), expected_wrl))
+    assert wrl == list(map(lambda f: argtypes._WebrootTuple(path=os.path.join(os.path.abspath('.'), f)), expected_wrl))
 
 
 @pytest.mark.parametrize("args", [

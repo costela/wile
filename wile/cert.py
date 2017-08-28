@@ -222,7 +222,7 @@ def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
     else:
         ssh = paramiko.SSHClient()
         ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-        ssh.connect(hostname=webroot.remote_host, port=webroot.remote_port,
+        ssh.connect(hostname=webroot.remote_host, port=webroot.remote_port or 22,  # .connect(port=None) times out
                     username=webroot.remote_user, key_filename=ssh_private_key,
                     password=os.getenv('WILE_SSH_PASS'))
         sftp = ssh.open_sftp()
