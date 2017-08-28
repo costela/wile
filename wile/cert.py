@@ -1,6 +1,5 @@
 import atexit
 import os
-import re
 import logging
 import errno
 from collections import OrderedDict
@@ -116,6 +115,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
     key, csr = _generate_key_and_csr(domain_list, key_size, key_digest)
 
     try:
+        logger.info('validating requests')
         crt, updated_authzrs = ctx.obj.acme.poll_and_request_issuance(csr, authzrs)
     except errors.PollError as e:
         if e.exhausted:
@@ -185,10 +185,7 @@ def _generate_domain_and_webroot_lists_from_args(ctx, domainroots):
     webroot = None
     for domainroot in domainroots:
         if domainroot.webroot:
-            if not len(domainroot.webroot.rsplit(':', 1)) > 1:
-                webroot = argtypes.WritablePathType(domainroot.webroot)
-            else:
-                webroot = domainroot.webroot
+            webroot = domainroot.webroot
         elif webroot:
             pass  # if we already have one from the last element, just use it
         else:
@@ -209,56 +206,32 @@ def _get_http_challenge(ctx, authzr):
 
 def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
     logger.info('storing validation of %s', webroot)
-    match = re.compile((r'^(?:(?:(?P<remote_user>[^@]+)@)?'
-                        r'(?P<remote_host>[^@:]+)'
-                        r'(?::(?P<remote_port>[0-9]+))?:)?'
-                        r'(?P<webroot>[^:]+)$')).match(webroot)
 
-    if not match:
-        ctx.fail('could not parse %s as webroot' % webroot)
+    chall_path = os.path.join(webroot.path, challb.path.strip('/'))
 
-    remote_user = match.group('remote_user')
-    remote_host = match.group('remote_host')
-    remote_port = match.group('remote_port')
-    remote_port = remote_port is None and 22 or int(remote_port)
-    webroot = os.path.expanduser(match.group('webroot'))
-    chall_path = os.path.join(webroot, challb.path.strip('/'))
-
-    if not remote_host:
-        webroot = argtypes.WritablePathType(webroot)
+    if not webroot.remote_host:
         try:
-            os.makedirs(os.path.join(webroot, challb.URI_ROOT_PATH), 0o755)
+            os.makedirs(os.path.join(webroot.path, challb.URI_ROOT_PATH), 0o755)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
 
-        with open(chall_path, 'wb') as outf:
-            logger.info('storing validation to %s', outf.name)
-            outf.write(b(val))
-            atexit.register(os.unlink, outf.name)
+        chall_open = open
+        # TODO: also remove on SSH case
+        atexit.register(os.unlink, chall_path)
     else:
-        try:
-            ssh = paramiko.SSHClient()
-            ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-            ssh.connect(hostname=remote_host, port=remote_port,
-                        username=remote_user, key_filename=ssh_private_key,
-                        password=os.getenv('WILE_SSH_PASS'))
-            sftp = ssh.open_sftp()
+        ssh = paramiko.SSHClient()
+        ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
+        ssh.connect(hostname=webroot.remote_host, port=webroot.remote_port,
+                    username=webroot.remote_user, key_filename=ssh_private_key,
+                    password=os.getenv('WILE_SSH_PASS'))
+        sftp = ssh.open_sftp()
 
-            with sftp.open(chall_path, 'wb') as outf:
-                logger.info('storing validation to %s' %
-                            os.path.basename(chall_path))
-                outf.write(b(val))
+        chall_open = sftp.open
 
-            sftp.close()
-            ssh.close()
-        except Exception as e:
-            try:
-                sftp.close()
-                ssh.close()
-            except Exception as e:
-                pass
-            ctx.fail('SFTP connection failed')
+    with chall_open(chall_path, 'wb') as outf:
+        logger.info('storing validation to %s', os.path.basename(chall_path))
+        outf.write(b(val))
 
 
 def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
