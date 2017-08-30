@@ -8,7 +8,6 @@ from six import b
 from six.moves import range
 
 import click
-import paramiko
 from OpenSSL import crypto
 
 from acme import challenges
@@ -18,6 +17,7 @@ from acme.jose.util import ComparableX509
 
 from . import reg
 from . import argtypes
+from . import sftp_helper
 
 logger = logging.getLogger('wile').getChild('cert')
 
@@ -216,22 +216,19 @@ def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
             if e.errno != errno.EEXIST:
                 raise
 
-        chall_open = open
-        # TODO: also remove on SSH case
-        atexit.register(os.unlink, chall_path)
+        chall_mod = os
     else:
-        ssh = paramiko.SSHClient()
-        ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-        ssh.connect(hostname=webroot.remote_host, port=webroot.remote_port or 22,  # .connect(port=None) times out
-                    username=webroot.remote_user, key_filename=ssh_private_key,
-                    password=os.getenv('WILE_SSH_PASS'))
-        sftp = ssh.open_sftp()
+        sftp = sftp_helper.cachedSFTPfactory(user=webroot.remote_user, host=webroot.remote_host,
+                                             port=webroot.remote_port, private_key=ssh_private_key)
 
-        chall_open = sftp.open
+        chall_mod = sftp
 
-    with chall_open(chall_path, 'wb') as outf:
+    with chall_mod.open(chall_path, 'wb') as outf:
         logger.info('storing validation to %s', os.path.basename(chall_path))
         outf.write(b(val))
+        # TODO: this may cause a race-condition with paramiko teardown code.
+        # We should probably have a more robust cleanup strategy without atexit.
+        atexit.register(chall_mod.unlink, chall_path)
 
 
 def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
