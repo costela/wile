@@ -5,7 +5,7 @@ from acme import messages
 from acme import client
 from acme import errors
 
-logger = logging.getLogger('wile').getChild('register')
+logger = logging.getLogger(__name__)
 
 
 @click.command()

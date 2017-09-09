@@ -13,7 +13,7 @@ from . import cert
 from . import reg
 from .lazyclient import LazyClient
 
-logger = logging.getLogger('wile')
+logger = logging.getLogger(__name__)
 
 try:  # if we're in the checked out tree, use setuptools_scm
     _version = setuptools_scm.get_version()

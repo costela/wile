@@ -19,7 +19,7 @@ from . import reg
 from . import argtypes
 from . import sftp_helper
 
-logger = logging.getLogger('wile').getChild('cert')
+logger = logging.getLogger(__name__)
 
 # Taken from https://tools.ietf.org/html/rfc5280#section-5.3.1
 # Not all all supported by letsencrypt's boulder.
