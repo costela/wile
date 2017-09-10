@@ -2,7 +2,7 @@
 
 # Overview
 
-Wile is a simple [Let's Encrypt](https://letsencrypt.org) (ACME) client that only supports the "webroot" method of validation. It only needs access to the root folder serving the domains in question. Specifically, it only needs access to the `.well-known` sub-folder and therefore doesn't need root permissions.
+Wile is a simple [Let's Encrypt](https://letsencrypt.org) (ACME) client that only supports the "webroot" method of validation. It only needs access to the root folder serving the domains in question. Specifically, it only needs access to the `.well-known` sub-folder and therefore doesn't need permission to access the actual website's content.
 
 The `.well-known` folder must also be accessible from external sources. I.e.: if you run a reverse proxy for some backend application, it should include an exception for this folder.
 
@@ -21,7 +21,7 @@ $ wile register -e name@example.com
 $ wile cert request --output-dir /etc/ssl/private/ example.com:/var/www/example.com/
 ```
 
-Certificate request using remote webroot validation:
+Certificate request using remote webroot validation of SSH/SFTP:
 ```
 $ wile cert request example.com:username@example.com:/var/www/example.com/
 ```
