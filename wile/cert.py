@@ -67,10 +67,14 @@ def cert():
 @click.option('--ssh-private-key', type=click.Path(file_okay=True, dir_okay=False), default=None, show_default=True,
               help='Path to SSH private key when using remote webroots. If not provided, the default paths will be '
                    'searched. If an SSH agent is running, it will also be queried independently of this setting.')
+@click.option('--symlink-domains', is_flag=True, default=False, show_default=True,
+              help='Create symlinks for each additional domain, pointing to the created certificate and key pair. If '
+                   'the --basename option is provided, an additional symlink for the first domain will also be '
+                   'created.')
 @click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
                 nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
-            key_digest, min_valid_time, force, ssh_private_key):
+            key_digest, min_valid_time, force, ssh_private_key, symlink_domains):
     '''
     Request a new certificate for the provided domains and respective webroot paths.
     If a webroot is not provided for a domain, the one supplied for the previous domain is used.\n
@@ -84,6 +88,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
     authzrs = list()
 
     domain_list, webroot_list = _generate_domain_and_webroot_lists_from_args(ctx, domainroots)
+    alt_domain_list = basename and domain_list[:] or domain_list[1:]
     basename = basename or domain_list[0]
     keyfile_path = os.path.join(output_dir, '%s.key' % basename)
     certfile_path = os.path.join(output_dir, '%s.crt' % basename)
@@ -154,6 +159,22 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
     with open(keyfile_path, 'wb') as keyfile:
         os.chmod(keyfile.name, 0o640)
         keyfile.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+
+    if symlink_domains:
+        for domain in alt_domain_list:
+            certfile_link = os.path.join(output_dir, '%s.crt' % domain)
+            keyfile_link = os.path.join(output_dir, '%s.key' % domain)
+            if not os.path.exists(certfile_link):
+                logger.info('creating symlink %s -> %s', certfile_link, certfile_path)
+                os.symlink(certfile_path, certfile_link)
+            else:
+                logger.warn('not overwriting %s with symlink', certfile_link)
+
+            if not os.path.exists(keyfile_link):
+                logger.info('creating symlink %s -> %s', keyfile_link, keyfile_path)
+                os.symlink(keyfile_path, keyfile_link)
+            else:
+                logger.warn('not overwriting %s with symlink', keyfile_link)
 
 
 @cert.command()
