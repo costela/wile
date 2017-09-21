@@ -85,7 +85,6 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
     '''
 
     regr = ctx.invoke(reg.register, quiet=True, auto_accept_tos=True)
-    authzrs = list()
 
     domain_list, webroot_list = _generate_domain_and_webroot_lists_from_args(ctx, domainroots)
     alt_domain_list = basename and domain_list[:] or domain_list[1:]
@@ -105,34 +104,11 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
                         'requesting new one', certfile_path, min_valid_time)
             force = True
 
-    for (domain, webroot) in zip(domain_list, webroot_list):
-        logger.info('requesting challenge for %s in %s', domain, webroot)
-
-        authzr = ctx.obj.acme.request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
-        authzrs.append(authzr)
-
-        challb = _get_http_challenge(ctx, authzr)
-        chall_response, chall_validation = challb.response_and_validation(ctx.obj.account_key)
-        _store_webroot_validation(ctx, webroot, ssh_private_key, challb,
-                                  chall_validation)
-        ctx.obj.acme.answer_challenge(challb, chall_response)
+    authzrs = _generate_validation_requests(domain_list, webroot_list, ctx, regr, ssh_private_key)
 
     key, csr = _generate_key_and_csr(domain_list, key_size, key_digest)
 
-    try:
-        logger.info('validating requests')
-        crt, updated_authzrs = ctx.obj.acme.poll_and_request_issuance(csr, authzrs)
-    except errors.PollError as e:
-        if e.exhausted:
-            logger.error('validation timed out for the following domains: %s', ', '.join(authzr.body.identifier for
-                                                                                         authzr in e.exhausted))
-        invalid_domains = [(e_authzr.body.identifier.value, _get_http_challenge(ctx, e_authzr).error.detail)
-                           for e_authzr in e.updated.values() if e_authzr.body.status == messages.STATUS_INVALID]
-        if invalid_domains:
-            logger.error('validation invalid for the following domains:')
-            for invalid_domain in invalid_domains:
-                logger.error('%s: %s' % invalid_domain)
-        ctx.exit(1)
+    crt = _poll_validations_and_fetch_crt(ctx, csr, authzrs)
 
     # write optional chain
     chain = ctx.obj.acme.fetch_chain(crt)
@@ -175,6 +151,40 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
                 os.symlink(keyfile_path, keyfile_link)
             else:
                 logger.warn('not overwriting %s with symlink', keyfile_link)
+
+
+def _generate_validation_requests(domain_list, webroot_list, ctx, regr, ssh_private_key):
+    authzrs = list()
+    for (domain, webroot) in zip(domain_list, webroot_list):
+        logger.info('requesting challenge for %s in %s', domain, webroot)
+
+        authzr = ctx.obj.acme.request_domain_challenges(domain, new_authzr_uri=regr.new_authzr_uri)
+        authzrs.append(authzr)
+
+        challb = _get_http_challenge(ctx, authzr)
+        chall_response, chall_validation = challb.response_and_validation(ctx.obj.account_key)
+        _store_webroot_validation(ctx, webroot, ssh_private_key, challb,
+                                  chall_validation)
+        ctx.obj.acme.answer_challenge(challb, chall_response)
+    return authzrs
+
+
+def _poll_validations_and_fetch_crt(ctx, csr, authzrs):
+    try:
+        logger.info('validating requests')
+        crt, updated_authzrs = ctx.obj.acme.poll_and_request_issuance(csr, authzrs)
+    except errors.PollError as e:
+        if e.exhausted:
+            logger.error('validation timed out for the following domains: %s', ', '.join(authzr.body.identifier for
+                                                                                         authzr in e.exhausted))
+        invalid_domains = [(e_authzr.body.identifier.value, _get_http_challenge(ctx, e_authzr).error.detail)
+                           for e_authzr in e.updated.values() if e_authzr.body.status == messages.STATUS_INVALID]
+        if invalid_domains:
+            logger.error('validation invalid for the following domains:')
+            for invalid_domain in invalid_domains:
+                logger.error('%s: %s' % invalid_domain)
+        ctx.exit(1)
+    return crt
 
 
 @cert.command()
