@@ -2,8 +2,8 @@ import atexit
 import os
 import logging
 import errno
+import datetime
 from collections import OrderedDict
-from datetime import datetime
 from six import b
 from six.moves import range
 
@@ -268,7 +268,7 @@ def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
     with open(certfile_path, 'rb') as certfile:
         crt = crypto.load_certificate(crypto.FILETYPE_PEM, certfile.read())
         # TODO: do we need to support the other possible ASN.1 date formats?
-        expiration = datetime.strptime(crt.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
+        expiration = datetime.datetime.strptime(crt.get_notAfter().decode('ascii'), r'%Y%m%d%H%M%SZ')
 
         # create a set of domain names in the cert (DN + SANs)
         crt_domains = {dict(crt.get_subject().get_components())[b('CN')].decode('ascii')}
@@ -280,7 +280,7 @@ def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
                 # and is definitely different from the one we're creating
                 crt_domains = crt_domains.union((x.strip()[4:] for x in str(ext).split(',')))
 
-        if datetime.now() + min_valid_time > expiration:
+        if datetime.datetime.now() + min_valid_time > expiration:
             logger.info('EXPIRATION')
             return False
         elif crt_domains != set(domains):

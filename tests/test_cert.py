@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 import pytest
 from mock import Mock, ANY, call
@@ -87,3 +88,51 @@ def test_wile_cert_revoke(datafiles, clirunner, logcapture, acmeclientmock_facto
     assert os.listdir(os.curdir) == []
     acmeclientmock.assert_called_once_with(wile.LETSENCRYPT_URL, ANY)
     acmeclientmock.return_value.revoke.assert_has_calls([call(ANY, 0), call(ANY, 0)])
+
+
+@pytest.mark.datafiles(
+    os.path.join(FIXTURE_DATA_DIR, 'cert_example.com.crt')
+)
+def test_is_valid_and_unchanged__expired(datafiles, fixed_datetime_monkeypatch):
+    # time after cert validity
+    fixed_datetime_monkeypatch(datetime(2017, 10, 17, 0, 0, 0))
+    res = cert._is_valid_and_unchanged(str(datafiles / 'cert_example.com.crt'),
+                                       ['example.com', 'www.example.com', 'test.example.com'],
+                                       timedelta(0))
+    assert res is False
+
+
+@pytest.mark.datafiles(
+    os.path.join(FIXTURE_DATA_DIR, 'cert_example.com.crt')
+)
+def test_is_valid_and_unchanged__new_domain(datafiles, fixed_datetime_monkeypatch):
+    # time after cert validity
+    fixed_datetime_monkeypatch(datetime(2017, 10, 16, 0, 0, 0))
+    res = cert._is_valid_and_unchanged(str(datafiles / 'cert_example.com.crt'),
+                                       ['example.com', 'www.example.com', 'test.example.com', 'new.example.com'],
+                                       timedelta(0))
+    assert res is False
+
+
+@pytest.mark.datafiles(
+    os.path.join(FIXTURE_DATA_DIR, 'cert_example.com.crt')
+)
+def test_is_valid_and_unchanged__removed_domain(datafiles, fixed_datetime_monkeypatch):
+    # time after cert validity
+    fixed_datetime_monkeypatch(datetime(2017, 10, 16, 0, 0, 0))
+    res = cert._is_valid_and_unchanged(str(datafiles / 'cert_example.com.crt'),
+                                       ['example.com', 'www.example.com'],
+                                       timedelta(0))
+    assert res is False
+
+
+@pytest.mark.datafiles(
+    os.path.join(FIXTURE_DATA_DIR, 'cert_example.com.crt')
+)
+def test_is_valid_and_unchanged(datafiles, fixed_datetime_monkeypatch):
+    # time after cert validity
+    fixed_datetime_monkeypatch(datetime(2017, 10, 16, 0, 0, 0))
+    res = cert._is_valid_and_unchanged(str(datafiles / 'cert_example.com.crt'),
+                                       ['example.com', 'www.example.com', 'test.example.com'],
+                                       timedelta(0))
+    assert res is True

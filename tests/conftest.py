@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import datetime
 from functools import partial
 
 from mock import Mock, PropertyMock
@@ -35,6 +36,17 @@ def inside_tmpdir(monkeypatch):
     os.chdir(tmpdir.name)
 
     return (tmpdir, homedir)
+
+
+@pytest.fixture()
+def fixed_datetime_monkeypatch(monkeypatch):
+    def _factory(now):
+        class _fixed_datetime(datetime.datetime):
+            @classmethod
+            def now(cls):
+                return now
+        monkeypatch.setattr(datetime, 'datetime', _fixed_datetime)
+    return _factory
 
 
 def _acmeclientcmock(monkeypatch, ask_for_tos=True, emails='', phones=''):
