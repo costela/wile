@@ -49,11 +49,6 @@ $ wile cert revoke /etc/ssl/private/example.com.crt
 
 ## Certificate renewal
 
-Per default, no new request will be made if wile detects an existing certificate for the same requested domains with a validity of more than 25 hours, 1 day plus 1 hour safety margin. This can be changed with the `--min-valid-time` and `--force` options.
+By default, no new request will be made if `wile` detects an existing certificate for the same requested domains with a validity of at least 1 week. This can be changed with the `--min-valid-time` and `--force` options.
 
-You can also increase the default minimal validity time to one week, if you intend to run wile via a weekly cronjob:
-```
-$ wile cert request --min-valid-time 1w example.com:/var/www/example.com/
-```
-
-Adding some safety margin, `--min-valid-time 8d` or `--min-valid-time $((24*7+1))h` are recommended for weekly cron operation.
+This way a simple daily cronjob is enough to ensure certificate freshness and should make renewals resiliant against moderate letsencrypt API downtime.

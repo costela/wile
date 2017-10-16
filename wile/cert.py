@@ -58,10 +58,10 @@ def cert():
               help='Basename to use when storing output: BASENAME.crt and BASENAME.key [default: first domain]')
 @click.option('--key-digest', metavar='DIGEST', default='sha256', show_default=True,
               help='The digest to use when signing the request with its key (must be supported by openssl)')
-@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='25h', show_default=True,
+@click.option('--min-valid-time', type=argtypes.TimespanType, metavar='TIMESPAN', default='1w', show_default=True,
               help='If a certificate is found and its expiration lies inside of this timespan, it will be '
                    'automatically requested and overwritten; otherwise no request will be made. The format for this '
-                   'option is "1d" for one day. Supported units are hours, days and weeks.')
+                   'option is "[DIGITS][UNIT]", where UNIT is one of "h" for hours, "d" for days and "w" for weeks.')
 @click.option('--force', is_flag=True, default=False, show_default=True,
               help='Whether to force a request to be made, even if a valid certificate is found')
 @click.option('--ssh-private-key', type=click.Path(file_okay=True, dir_okay=False), default=None, show_default=True,
