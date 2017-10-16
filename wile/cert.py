@@ -71,10 +71,15 @@ def cert():
               help='Create symlinks for each additional domain, pointing to the created certificate and key pair. If '
                    'the --basename option is provided, an additional symlink for the first domain will also be '
                    'created.')
+@click.option('--reuse-key', is_flag=True, default=False, show_default=True,
+              help='By default, wile creates a new key for each new certificate. This options enables key reuse for '
+                   'multiple certificate requests. If no existing key is found, a new one will be generated and the '
+                   'option will be ignored. The --basename and --output-dir options are used when trying to find an '
+                   'existing key')
 @click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
                 nargs=-1, required=True)
-def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
-            key_digest, min_valid_time, force, ssh_private_key, symlink_domains):
+def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest,
+            min_valid_time, force, ssh_private_key, symlink_domains, reuse_key):
     '''
     Request a new certificate for the provided domains and respective webroot paths.
     If a webroot is not provided for a domain, the one supplied for the previous domain is used.\n
@@ -106,7 +111,16 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
 
     authzrs = _generate_validation_requests(domain_list, webroot_list, ctx, regr, ssh_private_key)
 
-    key, csr = _generate_key_and_csr(domain_list, key_size, key_digest)
+    key_reused = False
+    if reuse_key and os.path.isfile(keyfile_path):
+        with open(keyfile_path, 'r') as f:
+            key = crypto.load_privatekey(crypto.FILETYPE_PEM, f.read())
+        key_reused = True
+    else:
+        key = crypto.PKey()
+        key.generate_key(crypto.TYPE_RSA, key_size)
+
+    csr = _generate_csr(key, key_digest, domain_list)
 
     crt = _poll_validations_and_fetch_crt(ctx, csr, authzrs)
 
@@ -129,7 +143,7 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename,
             certfile.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
 
     # write key
-    if not force and os.path.exists(keyfile_path):
+    if not key_reused and not force and os.path.exists(keyfile_path):
         _confirm_overwrite(keyfile_path)
 
     with open(keyfile_path, 'wb') as keyfile:
@@ -290,10 +304,7 @@ def _is_valid_and_unchanged(certfile_path, domains, min_valid_time):
             return True
 
 
-def _generate_key_and_csr(domains, key_size, key_digest):
-    key = crypto.PKey()
-    key.generate_key(crypto.TYPE_RSA, key_size)
-
+def _generate_csr(key, key_digest, domains):
     csr = crypto.X509Req()
     csr.set_version(2)
     csr.set_pubkey(key)
@@ -304,4 +315,4 @@ def _generate_key_and_csr(domains, key_size, key_digest):
 
     csr.sign(key, str(key_digest))
 
-    return (key, ComparableX509(csr))
+    return ComparableX509(csr)
