@@ -28,6 +28,7 @@ config = dict(
         'cryptography',
         'setuptools_scm',  # for run-time version-detect
         'paramiko',
+        'josepy',
     ],
     tests_require=[
         'backports.tempfile;python_version<"3.0"',

@@ -4,7 +4,7 @@ from functools import partial
 
 import setuptools_scm
 import click
-from acme import jose
+import josepy as jose
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa

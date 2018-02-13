@@ -13,7 +13,7 @@ from OpenSSL import crypto
 from acme import challenges
 from acme import messages
 from acme import errors
-from acme.jose.util import ComparableX509
+from josepy.util import ComparableX509
 
 from . import reg
 from . import argtypes
