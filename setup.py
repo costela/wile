@@ -22,7 +22,7 @@ config = dict(
     ],
     install_requires=[
         'six',
-        'acme >= 0.16.0',
+        'acme >= 0.21.0',
         'click >= 6.0',
         'pyOpenSSL',
         'cryptography',
