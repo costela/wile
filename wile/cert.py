@@ -262,6 +262,7 @@ def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
                 raise
 
         chall_mod = os
+        chall_open = open
     else:
         sftp = sftp_helper.cachedSFTPfactory(user=webroot.remote_user, host=webroot.remote_host,
                                              port=webroot.remote_port, private_key=ssh_private_key)
@@ -269,8 +270,9 @@ def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
         sftp.makedirs(os.path.join(webroot.path, challb.URI_ROOT_PATH))
 
         chall_mod = sftp
+        chall_open = chall_mod.open
 
-    with chall_mod.open(chall_path, 'wb') as outf:
+    with chall_open(chall_path, 'wb') as outf:
         logger.info('storing validation to %s', os.path.basename(chall_path))
         outf.write(b(val))
         # TODO: this may cause a race-condition with paramiko teardown code.
