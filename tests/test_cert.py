@@ -136,3 +136,21 @@ def test_is_valid_and_unchanged(datafiles, fixed_datetime_monkeypatch):
                                        ['example.com', 'www.example.com', 'test.example.com'],
                                        timedelta(0))
     assert res is True
+
+
+def test_store_webroot_validation__local(inside_tmpdir):
+    webroot = Mock(spec_set=['path', 'remote_host'], **{
+        'path': inside_tmpdir[0].name,
+        'remote_host': None,
+    })
+
+    challb = Mock(spec_set=['path', 'URI_ROOT_PATH'], **{
+        'path': '.well-known/acme-challenge/sometoken',
+        'URI_ROOT_PATH': '.well-known/acme-challenge',
+    })
+    cert._store_webroot_validation(webroot, None, challb, 'some validation content')
+
+    assert os.listdir(os.curdir) == ['.well-known']
+    assert os.listdir('.well-known') == ['acme-challenge']
+    assert os.listdir('.well-known/acme-challenge') == ['sometoken']
+    assert open('.well-known/acme-challenge/sometoken').read() == 'some validation content'

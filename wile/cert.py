@@ -177,7 +177,7 @@ def _generate_validation_requests(domain_list, webroot_list, ctx, regr, ssh_priv
 
         challb = _get_http_challenge(ctx, authzr)
         chall_response, chall_validation = challb.response_and_validation(ctx.obj.account_key)
-        _store_webroot_validation(ctx, webroot, ssh_private_key, challb,
+        _store_webroot_validation(webroot, ssh_private_key, challb,
                                   chall_validation)
         ctx.obj.acme.answer_challenge(challb, chall_response)
     return authzrs
@@ -249,7 +249,7 @@ def _get_http_challenge(ctx, authzr):
     ctx.fail('no acceptable challenge type found; only HTTP01 supported')
 
 
-def _store_webroot_validation(ctx, webroot, ssh_private_key, challb, val):
+def _store_webroot_validation(webroot, ssh_private_key, challb, val):
     logger.info('storing validation of %s', webroot)
 
     chall_path = os.path.join(webroot.path, challb.path.strip('/'))
