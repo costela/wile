@@ -16,9 +16,6 @@ python:
 env: TOXENV=py
 
 matrix:
-  include:
-    - env: TOXENV=flake8
-      os: linux
   fast_finish: true
 
 addons:
@@ -33,10 +30,18 @@ script: tox
 
 cache: pip
 
+stages:
+  - lint
+  - test
+  - deploy
+
 jobs:
   include:
+    - stage: lint
+      env: TOXENV=flake8
     - stage: deploy
       script: skip
+      env:
       deploy:
         provider: pypi
         distributions: sdist bdist_wheel
