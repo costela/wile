@@ -6,7 +6,6 @@ dist: trusty
 
 os:
   - linux
-  - osx
 
 python:
   - "2.7"
@@ -20,8 +19,6 @@ matrix:
   include:
     - env: TOXENV=flake8
       os: linux
-  allow_failures:
-    - os: osx
   fast_finish: true
 
 addons:
