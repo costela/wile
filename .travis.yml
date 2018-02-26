@@ -28,7 +28,10 @@ install:
 
 script: tox
 
-cache: pip
+cache:
+  pip: true
+  directories:
+    - .tox
 
 stages:
   - lint
