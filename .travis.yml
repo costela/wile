@@ -42,8 +42,7 @@ jobs:
   include:
     - stage: lint
       env: TOXENV=flake8
-    - &deploy
-      stage: deploy
+    - stage: deploy
       script: skip
       env:
       deploy:
@@ -54,7 +53,15 @@ jobs:
           secure: "jXU9GohjMS6y/yPgzVcZc6GI3lhqQnN5cHGKDQIAQp7oQBePtoF3n3PI8TRXGIgEEqZS3J4ML4ViA8PxSxwbZdOvkHZVDFaY3xezaXLQ8dpwM3als2syAvx7Oq2Tb0kJE4WIIjriQvSIOQJ5fKHYZLSDI10AwPOfpYoLpavprzppF86nil5UTk6xK9kaerC/hGTbn8uX4J2BhiJGWjxaa/XX7hOpUf6YhHqGJZHy8KsTV85y2UgbULND6M70ikoT1bcJ/dfRrTF6kuEIu5zDv/d38YRCWc3j5chDkPWsgvQtVhoXPq5I+uFwEElz6Qwf3Z2Ec/tSaQxLUNZK3AbHdzVeYDRqZjYWctf54bCLBfaqUkJr7+sRyrwY1dnr3NnR4ZrHHghuZflk/ct5CZ5+6WO5Ka44CKaU4DizHp+NI3PHUbGVcw42jVOOmloNpmgc3W93Xoe+ozsraYGdXY4GdugHqkvhxFnocbJE1Cx0jOT6p3CPbIweP9D9j2S8dbVWIof7SILCk9IvGLa5g+f/587h2u5pzHIX5gczNFYTAwk5ltqHCmUQraj5bP+sMgPXu6QQqjExYOT7fDptogVCtnb+jnlKvyCAck1qf9vJl2MrM/4uosZlpvjBUHQMAHUJ/5H4oT0Gu1aJwuLt4AnhzEpPdZufaspyGM90uFxYaek="
         on:
           tags: true
-    - <<: *deploy
+    - stage: deploy
       python: '3.6'
+      script: skip
+      env:
       deploy:
-        deistributions: bdist_wheel
+        provider: pypi
+        distributions: bdist_wheel
+        user: wile_travis
+        password:
+          secure: "jXU9GohjMS6y/yPgzVcZc6GI3lhqQnN5cHGKDQIAQp7oQBePtoF3n3PI8TRXGIgEEqZS3J4ML4ViA8PxSxwbZdOvkHZVDFaY3xezaXLQ8dpwM3als2syAvx7Oq2Tb0kJE4WIIjriQvSIOQJ5fKHYZLSDI10AwPOfpYoLpavprzppF86nil5UTk6xK9kaerC/hGTbn8uX4J2BhiJGWjxaa/XX7hOpUf6YhHqGJZHy8KsTV85y2UgbULND6M70ikoT1bcJ/dfRrTF6kuEIu5zDv/d38YRCWc3j5chDkPWsgvQtVhoXPq5I+uFwEElz6Qwf3Z2Ec/tSaQxLUNZK3AbHdzVeYDRqZjYWctf54bCLBfaqUkJr7+sRyrwY1dnr3NnR4ZrHHghuZflk/ct5CZ5+6WO5Ka44CKaU4DizHp+NI3PHUbGVcw42jVOOmloNpmgc3W93Xoe+ozsraYGdXY4GdugHqkvhxFnocbJE1Cx0jOT6p3CPbIweP9D9j2S8dbVWIof7SILCk9IvGLa5g+f/587h2u5pzHIX5gczNFYTAwk5ltqHCmUQraj5bP+sMgPXu6QQqjExYOT7fDptogVCtnb+jnlKvyCAck1qf9vJl2MrM/4uosZlpvjBUHQMAHUJ/5H4oT0Gu1aJwuLt4AnhzEpPdZufaspyGM90uFxYaek="
+        on:
+          tags: true
