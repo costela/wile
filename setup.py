@@ -55,7 +55,7 @@ config = dict(
     ],
 )
 
-if 'sdist' in sys.argv:
+if 'sdist' in sys.argv or 'bdist_wheel' in sys.argv:
     config.update(dict(
         use_scm_version=True,
     ))
