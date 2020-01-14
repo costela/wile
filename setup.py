@@ -23,7 +23,7 @@ config = dict(
     install_requires=[
         'six',
         'acme >= 0.21.0, != 0.22.0',
-        'click >= 6.0, < 7.0',
+        'click >= 7.0, < 8.0',
         'pyOpenSSL',
         'cryptography',
         'setuptools_scm',  # for run-time version-detect

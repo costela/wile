@@ -76,7 +76,7 @@ def cert():
                    'multiple certificate requests. If no existing key is found, a new one will be generated and the '
                    'option will be ignored. The --basename and --output-dir options are used when trying to find an '
                    'existing key')
-@click.argument('domainroots', 'DOMAIN[:WEBROOT]', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
+@click.argument('domainroots', type=argtypes.DomainWebrootType, metavar='DOMAIN[:WEBROOT]',
                 nargs=-1, required=True)
 def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_digest,
             min_valid_time, force, ssh_private_key, symlink_domains, reuse_key):
