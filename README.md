@@ -1,6 +1,11 @@
 [![Build Status](https://travis-ci.org/costela/wile.svg?branch=master)](https://travis-ci.org/costela/wile)
 [![PyPI version](https://badge.fury.io/py/wile.svg)](https://badge.fury.io/py/wile)
 
+# ⚠ UNMAINTAINED AND DEPRECATED
+
+This code was a nice exercise, but it has been undermaintained for a while and multiple better alternatives are available.
+Please consider switching.
+
 # Overview
 
 Wile is a simple [Let's Encrypt](https://letsencrypt.org) (ACME) client that only supports the "webroot" method of validation. It only needs access to the root folder serving the domains in question. Specifically, it only needs access to the `.well-known` sub-folder and therefore doesn't need permission to access the actual website's content.
