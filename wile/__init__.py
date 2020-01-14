@@ -78,7 +78,7 @@ def get_or_gen_key(ctx, account_key_path, new_account_key_size):
                 logger.error('could not open key %s: %s', account_key_path, e)
                 ctx.exit(1)
     else:
-        logger.warn('no account key found; creating a new %d bit key in %s', new_account_key_size, account_key_path)
+        logger.warning('no account key found; creating a new %d bit key in %s', new_account_key_size, account_key_path)
         account_key = jose.JWKRSA(key=rsa.generate_private_key(
             public_exponent=65537,
             key_size=new_account_key_size,

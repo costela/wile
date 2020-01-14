@@ -158,13 +158,13 @@ def request(ctx, domainroots, with_chain, key_size, output_dir, basename, key_di
                 logger.info('creating symlink %s -> %s', certfile_link, certfile_path)
                 os.symlink(certfile_path, certfile_link)
             else:
-                logger.warn('not overwriting %s with symlink', certfile_link)
+                logger.warning('not overwriting %s with symlink', certfile_link)
 
             if not os.path.exists(keyfile_link):
                 logger.info('creating symlink %s -> %s', keyfile_link, keyfile_path)
                 os.symlink(keyfile_path, keyfile_link)
             else:
-                logger.warn('not overwriting %s with symlink', keyfile_link)
+                logger.warning('not overwriting %s with symlink', keyfile_link)
 
 
 def _generate_validation_requests(domain_list, webroot_list, ctx, regr, ssh_private_key):
